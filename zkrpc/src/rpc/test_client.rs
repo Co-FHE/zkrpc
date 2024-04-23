@@ -2,7 +2,7 @@ pub mod pb {
     tonic::include_proto!("grpc.zkrpc.service");
 }
 #[cfg(test)]
-mod tests {
+mod test_client {
     use crate::rpc::zkrpc;
 
     use super::*;
