@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package grpc.zkrpc.service;
+
+message ZkRequest {
+  string address = 1;
+  int64 blockHeight = 2;
+  int64 epoch = 3;
+}
+
+message ZkResponse {
+  string address = 1;
+  int64 blockHeight = 2;
+  int64 epoch = 3;
+  string alphaProof = 4;
+  string betaProof = 5;
+}
+
+service ZkService {
+  rpc GetProof(ZkRequest) returns (ZkResponse);
+}

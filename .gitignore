@@ -1,4 +1,4 @@
-/target/
+**/target/
 **/*.rs.bk
 
 **/OUT
@@ -11,6 +11,7 @@
 .idea/
 *.iml
 *.iws
+*.idea
 .DS_Store/
 .vscode/
 *.swp
