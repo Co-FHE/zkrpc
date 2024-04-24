@@ -1,34 +1,54 @@
 pub mod pb {
     tonic::include_proto!("grpc.zkrpc.service");
 }
-use pb::{ZkRequest, ZkResponse};
+use config::config::RpcConfig;
+use pb::*;
 use tonic::{transport::Server, Request, Response, Status};
-#[derive(Default)]
-pub struct ZkRpcServer {}
+use tracing::{debug, info};
+#[derive(Debug, Clone)]
+pub struct ZkRpcServer {
+    pub addr: String,
+}
 
 #[tonic::async_trait]
 impl pb::zk_service_server::ZkService for ZkRpcServer {
-    async fn get_proof(&self, request: Request<ZkRequest>) -> Result<Response<ZkResponse>, Status> {
-        let resp = pb::ZkResponse {
-            address: request.get_ref().address.clone(),
-            block_height: request.get_ref().block_height,
-            epoch: request.get_ref().epoch,
-            alpha_proof: "alpha proof".to_string(),
-            beta_proof: "beta proof".to_string(),
+    async fn gen_proof(
+        &self,
+        request: Request<ZkGenProofRequest>,
+    ) -> Result<Response<ZkGenProofResponse>, Status> {
+        let zk_request = request.into_inner();
+        debug!("Received request: {:?}", zk_request);
+
+        let response = ZkGenProofResponse {
+            alpha_proof_merkle_root: "alpha_proof_merkle_root".to_string(),
+            beta_proof_merkle_root: "beta_proof_merkle_root".to_string(),
+            terminal_weights: Default::default(),
         };
-        Ok(Response::new(resp))
+        Ok(Response::new(response))
+    }
+    async fn verify_proof(
+        &self,
+        request: Request<ZkVerifyProofRequest>,
+    ) -> Result<Response<ZkVerifyProofResponse>, Status> {
+        let zk_request = request.into_inner();
+        debug!("Received request: {:?}", zk_request);
+
+        let response = ZkVerifyProofResponse { is_valid: true };
+        Ok(Response::new(response))
     }
 }
 impl ZkRpcServer {
-    pub async fn start() -> anyhow::Result<()> {
-        let addr = "[::1]:12345".parse().unwrap();
-        let zkserver = ZkRpcServer::default();
-
-        println!("zkRpcServer listening on {}", addr);
-
+    pub fn new(cfg: &RpcConfig) -> Self {
+        Self {
+            addr: format!("{}:{}", cfg.rpc_host, cfg.rpc_port),
+        }
+    }
+    pub async fn start(&self) -> anyhow::Result<()> {
+        info!("zkRpcServer listening on {}", self.addr);
+        let t: ZkRpcServer = self.clone();
         Server::builder()
-            .add_service(pb::zk_service_server::ZkServiceServer::new(zkserver))
-            .serve(addr)
+            .add_service(pb::zk_service_server::ZkServiceServer::new(t))
+            .serve(self.addr.parse()?)
             .await?;
         Ok(())
     }

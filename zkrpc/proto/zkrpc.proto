@@ -2,20 +2,43 @@ syntax = "proto3";
 
 package grpc.zkrpc.service;
 
-message ZkRequest {
-  string address = 1;
-  int64 blockHeight = 2;
-  int64 epoch = 3;
+message ZkGenProofRequest {
+  string proverAddress = 1;
+  string satelliteAddress = 2;
+  int64 epochForProof = 3;
+  int64 blockHeightFromForProof = 4;
+  int64 blockHeightToForProof = 5;
 }
 
-message ZkResponse {
-  string address = 1;
-  int64 blockHeight = 2;
-  int64 epoch = 3;
-  string alphaProof = 4;
-  string betaProof = 5;
+message ZkWeight{
+  int64 alphaWeight = 1;
+  int64 betaWeight = 2;
+}
+
+message ZkGenProofResponse {
+  string alphaProofMerkleRoot = 1;
+  string betaProofMerkleRoot = 2;
+  // hashmap of terminal address and its weight
+  map<string, ZkWeight> terminalWeights = 3;
+}
+
+message ZkVerifyProofRequest {
+  string proverAddress = 1;
+  string satelliteAddress = 2;
+  int64 epochForProof = 3;
+  int64 blockHeightFromForProof = 4;
+  int64 blockHeightToForProof = 5;
+  string alphaProofMerkleRoot = 6;
+  string betaProofMerkleRoot = 7;
+  map<string, ZkWeight> terminalWeights = 8;
+  
+}
+
+message ZkVerifyProofResponse {
+  bool isValid = 1;  
 }
 
 service ZkService {
-  rpc GetProof(ZkRequest) returns (ZkResponse);
+  rpc GenProof(ZkGenProofRequest) returns (ZkGenProofResponse);
+  rpc VerifyProof(ZkVerifyProofRequest) returns (ZkVerifyProofResponse);
 }

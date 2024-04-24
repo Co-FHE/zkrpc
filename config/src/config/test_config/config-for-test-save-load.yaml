@@ -1,0 +1,11 @@
+log:
+  log_dir: logs
+  log_level: trace
+  show_file_path: false
+  show_line_number: false
+  show_with_target: true
+  write_to_file: false
+  rotation: daily
+rpc:
+  rpc_port: 15937
+  rpc_host: 127.0.0.1

@@ -62,17 +62,16 @@ impl Default for BaseConfig {
                     panic!("Home directory not found");
                 })
                 .join(".space-dev"),
-            EnvironmentKind::Testing => PathBuf::from("../.space-test"),
+            EnvironmentKind::Testing => dirs::home_dir()
+                .unwrap_or_else(|| {
+                    panic!("Home directory not found");
+                })
+                .join(".space-test"),
         };
-        let absolute_path = env::current_dir()
-            .unwrap()
-            .join(path.clone())
-            .canonicalize()
-            .unwrap();
         println!(
             "{} Environment and the Root Path is {}",
             env.as_ref().blue(),
-            absolute_path.to_string_lossy().blue()
+            path.to_string_lossy().blue()
         );
         Self {
             root_path: path,

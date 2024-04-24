@@ -11,16 +11,19 @@ pub use error::*;
 mod log_config;
 pub use log_config::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-
+mod rpc_config;
+pub use rpc_config::*;
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub log: LogConfig,
+    pub rpc: RpcConfig,
 }
 impl Default for Config {
     fn default() -> Self {
         Self {
             log: LogConfig::default(),
+            rpc: RpcConfig::default(),
         }
     }
 }
