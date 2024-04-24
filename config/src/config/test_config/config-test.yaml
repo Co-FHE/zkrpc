@@ -1,0 +1,18 @@
+base:
+  data_dir: "data"
+log:
+  log_dir: logs
+  log_level: trace # trace, debug, info, warn, error
+  write_to_file: false
+  show_file_path: false
+  show_line_number: false
+  show_with_target: true
+  rotation: daily # daily, hourly, minutely, never
+# zkprc:
+#   host: "localhost"
+#   port: 2181
+# mysql:
+#   host: "localhost"
+#   port: 3306
+#   user: "root
+#   password: "root"

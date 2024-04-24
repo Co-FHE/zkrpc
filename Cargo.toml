@@ -1,2 +1,2 @@
 [workspace]
-members = ["zkrpc", "da-layer", "config"]
+members = ["zkrpc", "da-layer", "config", "logger"]
