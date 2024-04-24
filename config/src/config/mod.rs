@@ -1,19 +1,14 @@
 mod base_config;
-use colored::Colorize;
+pub use base_config::*;
+use lazy_static;
 use std::{
-    env,
     fs::File,
     io::{Read, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
-#[macro_use]
-use lazy_static;
-pub use base_config::*;
 mod error;
-use dirs::home_dir;
 pub use error::*;
 mod log_config;
-use colored::*;
 pub use log_config::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
@@ -84,7 +79,6 @@ impl<T: ?Sized> PersistableConfig for T where T: Serialize + DeserializeOwned {}
 
 #[cfg(test)]
 mod tests {
-    use tracing::info;
     use tracing_subscriber::fmt;
 
     use super::*;

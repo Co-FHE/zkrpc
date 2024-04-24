@@ -1,4 +1,3 @@
-use super::Error;
 use colored::*;
 use serde::{Deserialize, Serialize};
 use std::{env, path::PathBuf};
@@ -29,7 +28,7 @@ impl Default for BaseConfig {
             EnvironmentKind::Testing
         } else {
             env::var("ENV").map_or_else(
-                |e| {
+                |_| {
                     println!(
                         "{} Environment variable `ENV` not found, defaulting to {}",
                         "Config Info:".green(),
