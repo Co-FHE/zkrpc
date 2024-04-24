@@ -13,17 +13,21 @@ pub use log_config::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 mod rpc_config;
 pub use rpc_config::*;
+mod da_layer_config;
+pub use da_layer_config::*;
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub log: LogConfig,
     pub rpc: RpcConfig,
+    pub da_layer: DaLayerConfig,
 }
 impl Default for Config {
     fn default() -> Self {
         Self {
             log: LogConfig::default(),
             rpc: RpcConfig::default(),
+            da_layer: DaLayerConfig::default(),
         }
     }
 }
@@ -111,6 +115,6 @@ mod tests {
         let loaded_config = Config::load_config(path).unwrap();
         assert_eq!(config.log.log_dir, Path::new("logs"));
         assert_eq!(config, loaded_config);
-        fs::remove_file(path).unwrap();
+        // fs::remove_file(path).unwrap();
     }
 }

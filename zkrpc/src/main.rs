@@ -1,6 +1,5 @@
 mod rpc;
 use anyhow::Result;
-use config::config::Config;
 use logger::initialize_logger;
 use rpc::ZkRpcServer;
 #[tokio::main]
