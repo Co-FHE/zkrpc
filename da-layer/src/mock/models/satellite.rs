@@ -12,6 +12,7 @@ pub struct Model {
     pub tle_l1: String,
     pub tle_l2: String,
     pub height: i32,
+    pub validator_address: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

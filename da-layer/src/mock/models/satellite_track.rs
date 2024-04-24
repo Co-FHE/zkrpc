@@ -17,6 +17,7 @@ pub struct Model {
     pub speed: f32,
     pub bandwidth_ground: i32,
     pub bandwidth_space: i32,
+    pub validator_address: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -16,6 +16,8 @@ pub struct Model {
     pub disconnect_time: Option<i64>,
     pub net_latency: i32,
     pub droped_ip_packets: Option<String>,
+    pub terminal_address: Option<String>,
+    pub satellite_validator_address: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

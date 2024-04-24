@@ -10,6 +10,9 @@ pub struct Model {
     pub latitude: f32,
     #[sea_orm(column_type = "Float")]
     pub longitude: f32,
+    pub address: Option<String>,
+    #[sea_orm(primary_key)]
+    pub id: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
