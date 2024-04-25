@@ -10,3 +10,4 @@ types = { path = "../types" }
 config = { path = "../config" }
 logger = { path = "../logger" }
 da-layer = { path = "../da-layer" }
+num-bigint = "0.4.4"
