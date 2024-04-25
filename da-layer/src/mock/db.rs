@@ -1,8 +1,14 @@
-use crate::mock::error::Error;
+use crate::error::Error;
+use crate::terminal;
 use config::config::MySQLConfig;
-use tracing::info;
+use sea_orm::{ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, QueryOrder};
+use sea_orm::{JoinType, QuerySelect};
+use tracing::{info, warn};
 
-struct Db {
+use super::prelude::*;
+use super::terminal_track;
+
+pub struct Db {
     config: MySQLConfig,
     db: sea_orm::DatabaseConnection,
 }
@@ -28,15 +34,62 @@ impl Db {
     }
 }
 
+impl Db {
+    pub async fn find_all_terminal_track_with_single_satellite_block_from_to(
+        &self,
+        satellite_address: &str,
+        block_height_from: u64,
+        block_height_to: u64,
+    ) -> Result<Vec<(terminal_track::Model, terminal::Model)>, Error> {
+        let terminals = TerminalTrack::find()
+            .filter(terminal_track::Column::BlockNumber.lte(block_height_to))
+            .filter(terminal_track::Column::BlockNumber.gte(block_height_from))
+            .filter(terminal_track::Column::SatelliteValidatorAddress.eq(satellite_address))
+            // .inner_join(terminal::Entity)
+            .find_also_related(Terminal)
+            // .join(
+            //     JoinType::InnerJoin,
+            //     terminal_track::Entity::belongs_to(terminal::Entity)
+            //         .from(terminal_track::Column::TerminalAddress)
+            //         .to(terminal::Column::Address)
+            //         .into(),
+            // )
+            .order_by_asc(terminal_track::Column::BlockNumber)
+            .all(&self.db)
+            .await
+            .map_err(|e| {
+                Error::DbErr(
+                    "find_all_terminal_track_with_single_satellite_block_from_to error".to_string(),
+                    e,
+                )
+            })?
+            .into_iter()
+            .filter_map(|(tt, t)| match t {
+                Some(t) => Some((tt, t)),
+                None => {
+                    warn!(
+                        "address {} in terminal_track not found in table track",
+                        tt.terminal_address.as_ref().unwrap()
+                    );
+                    None
+                }
+            })
+            .collect();
+
+        Ok(terminals)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use config::config::LogConfig;
+    use logger::init_logger_for_test;
 
     use super::*;
 
     #[tokio::test]
     async fn test_db() {
-        let _guard = logger::initialize_logger(&LogConfig::default());
+        let _guard = init_logger_for_test!();
         let cfg = config::config::Config::new().unwrap();
         let _ = Db::new({
             let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
@@ -44,5 +97,27 @@ mod tests {
         })
         .await
         .unwrap();
+    }
+    #[tokio::test]
+    // #[cfg(exclude)]
+    async fn test_db_find_all_terminal_track_with_single_satellite_block_from_to() {
+        let _guard = init_logger_for_test!();
+
+        let cfg = config::config::Config::new().unwrap();
+        let db = Db::new({
+            let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+            cfg
+        })
+        .await
+        .unwrap();
+        let result = db
+            .find_all_terminal_track_with_single_satellite_block_from_to(
+                "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
+                180000,
+                500715,
+            )
+            .await
+            .unwrap();
+        info!("result len: {}", result.len());
     }
 }

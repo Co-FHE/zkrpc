@@ -18,9 +18,24 @@ pub struct Model {
     pub droped_ip_packets: Option<String>,
     pub terminal_address: Option<String>,
     pub satellite_validator_address: Option<String>,
+    #[sea_orm(primary_key)]
+    pub id: i64,
+}
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::terminal::Entity",
+        from = "Column::TerminalMac",
+        to = "super::terminal::Column::Mac"
+    )]
+    Terminal,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+// `Related` trait has to be implemented by hand
+impl Related<super::terminal::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Terminal.def()
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}

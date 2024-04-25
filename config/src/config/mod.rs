@@ -15,6 +15,8 @@ mod rpc_config;
 pub use rpc_config::*;
 mod da_layer_config;
 pub use da_layer_config::*;
+mod constants;
+pub use constants::*;
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {

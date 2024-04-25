@@ -28,7 +28,12 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
     guard
 }
-
+#[macro_export]
+macro_rules! init_logger_for_test {
+    () => {
+        logger::initialize_logger(&LogConfig::default())
+    };
+}
 #[cfg(test)]
 mod tests {
     use super::*;

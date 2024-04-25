@@ -18,6 +18,8 @@ pub struct Model {
     pub bandwidth_ground: i32,
     pub bandwidth_space: i32,
     pub validator_address: Option<String>,
+    #[sea_orm(primary_key)]
+    pub id: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

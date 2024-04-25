@@ -1,2 +1,4 @@
 [workspace]
-members = ["zkrpc", "da-layer", "config", "logger"]
+members = ["zkrpc", "da-layer", "config", "logger", "types", "pox"]
+
+resolver = "2"

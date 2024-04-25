@@ -10,6 +10,8 @@ pub struct Model {
     pub ip_sequence: i32,
     #[sea_orm(column_type = "Binary(BlobSize::Blob(Some(100)))")]
     pub ip_packet_data: Vec<u8>,
+    #[sea_orm(primary_key)]
+    pub id: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
