@@ -15,13 +15,14 @@ lazy_static! {
         .to_bigint()
         .unwrap();
 }
-
+#[derive(Debug, Clone)]
 pub struct Terminal<T: FixedPoint> {
     pub address: String,
     pub x: T,
     pub y: T,
     pub alpha: Alpha<T>,
 }
+#[derive(Debug, Clone)]
 pub struct Alpha<T: FixedPoint> {
     pub rspr: T,
 }

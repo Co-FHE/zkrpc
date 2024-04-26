@@ -1,5 +1,7 @@
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
+use halo2_proofs::arithmetic::Field;
+use halo2curves::pasta::{Fp, Fq};
 use num_bigint::{BigInt, BigUint, Sign};
 use num_rational::{BigRational, Ratio};
 use num_traits::*;
@@ -37,6 +39,7 @@ pub trait FixedPoint:
     fn fixed_sqrt(&self) -> Result<Self, Error>;
 }
 pub trait FixedPointInteger: FixedPoint {
+    fn to_fp(&self) -> Result<Fp, Error>;
     fn fixed_from_f64(value: f64, multiplier: &Self) -> Result<Self, Error>;
 }
 pub trait FixedPointDecimal: FixedPoint {
@@ -64,6 +67,10 @@ impl FixedPoint for BigInt {
 
     fn fixed_is_negative(&self) -> bool {
         self.is_negative()
+    }
+
+    fn fixed_sqr(&self) -> Self {
+        self.clone() * self.clone()
     }
 }
 impl FixedPoint for Decimal {
@@ -119,6 +126,17 @@ impl FixedPointInteger for BigInt {
             e
         })? * multiplier;
         return Ok(r.round().to_integer());
+    }
+
+    fn to_fp(&self) -> Result<Fp, Error> {
+        let (sig, mut bytes) = self.to_u64_digits();
+        if sig == Sign::Minus {
+            let e = Error::NegativeFpErr(self.to_string());
+            error!("{:?}", e);
+            return Err(e);
+        }
+        bytes.resize(4, 0);
+        Ok(Fp::from_raw([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 }
 

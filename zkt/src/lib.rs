@@ -1,3 +1,4 @@
+mod traits;
 /// Prove knowing knowledge of six private inputs: x1 x2 x3 a b c
 /// s.t: x1a + x2b + x3c = out
 use halo2_proofs::{
@@ -7,6 +8,7 @@ use halo2_proofs::{
     poly::Rotation,
 };
 use halo2curves::serde::SerdeObject;
+pub use traits::*;
 // use halo2_proofs::{dev::MockProver, pasta::Fp};
 
 /// Circuit design:

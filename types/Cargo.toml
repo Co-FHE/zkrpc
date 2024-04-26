@@ -14,3 +14,6 @@ lazy_static = "1.4.0"
 tracing = "0.1.40"
 thiserror = "1.0.59"
 num-traits = "0.2.18"
+halo2_proofs = "0.3.0"
+halo2curves = "0.6.1"
+zkt = { path = "../zkt" }
