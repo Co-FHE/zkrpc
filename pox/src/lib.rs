@@ -1,19 +1,21 @@
 use num_bigint::BigInt;
 use types::Satellite;
+mod math;
+use math::*;
 
 pub struct PoX {
     satellites: Vec<Satellite<BigInt>>,
 }
 impl PoX {
-    fn empty() -> Self {
+    pub fn empty() -> Self {
         Self {
             satellites: Vec::new(),
         }
     }
-    fn new(satellites: Vec<Satellite<BigInt>>) -> Self {
+    pub fn new(satellites: Vec<Satellite<BigInt>>) -> Self {
         Self { satellites }
     }
-    fn add(&mut self, satellite: Satellite<BigInt>) {
+    pub fn push(&mut self, satellite: Satellite<BigInt>) {
         self.satellites.push(satellite)
     }
 }

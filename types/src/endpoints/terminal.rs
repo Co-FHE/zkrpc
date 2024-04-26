@@ -1,9 +1,7 @@
 use config::config::{COORDINATE_PRECISION_BIGINT, RSPR_PRECISION_BIGINT};
 use lazy_static::lazy_static;
 use num_bigint::{BigInt, BigUint, ToBigInt};
-use num_rational::BigRational;
-use rust_decimal::{prelude::FromPrimitive, Decimal};
-use tracing::{error, warn};
+use rust_decimal::Decimal;
 
 use crate::{Error, FixedPoint, FixedPointDecimal, FixedPointInteger};
 
