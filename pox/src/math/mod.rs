@@ -1,4 +1,4 @@
 mod poly;
 use poly::*;
 mod gaussian;
-use gaussian::*;
+pub(crate) use gaussian::*;

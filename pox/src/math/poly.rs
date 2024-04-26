@@ -6,7 +6,7 @@ pub struct LinearPolynomial<T: FixedPoint> {
 }
 impl<T: FixedPoint> LinearPolynomial<T> {
     pub fn prod(&self) -> T {
-        let mut sum = T::zero();
+        let mut sum = T::fixed_zero();
         for i in 0..self.coefs.len() {
             sum = sum + self.coefs[i].clone() * self.xs[i].clone();
         }

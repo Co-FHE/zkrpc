@@ -31,7 +31,7 @@ impl DaLayerTrait for MockLocalDB {
             .into_iter()
             .filter_map(|(x, y)| {
                 x.terminal_address.and_then(|ta| {
-                    Some((ta.clone(), {
+                    Some({
                         let pos = self
                             .proj
                             .convert((y.longitude as f64, y.latitude as f64))
@@ -53,7 +53,7 @@ impl DaLayerTrait for MockLocalDB {
                             x.signal_strength as f64,
                         )
                         .ok()?
-                    }))
+                    })
                 })
             })
             .collect();

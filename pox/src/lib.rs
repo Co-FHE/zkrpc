@@ -1,21 +1,46 @@
 use num_bigint::BigInt;
-use types::Satellite;
+use types::{FixedPoint, Satellite, Terminal};
 mod math;
 use math::*;
+use rayon::prelude::*;
 
-pub struct PoX {
-    satellites: Vec<Satellite<BigInt>>,
+struct PoDCoef<T: FixedPoint> {
+    index: usize,
+    coef: T,
+    x: T,
 }
-impl PoX {
-    pub fn empty() -> Self {
-        Self {
-            satellites: Vec::new(),
-        }
+
+pub struct PoX<K: Kernel<Pos2D<BigInt>, BigInt>> {
+    kernel: K,
+    satellite: Satellite<BigInt>,
+}
+impl PoX<Quadratic<BigInt>> {
+    pub fn new(satellite: Satellite<BigInt>, kernel: Quadratic<BigInt>) -> Self {
+        Self { kernel, satellite }
     }
-    pub fn new(satellites: Vec<Satellite<BigInt>>) -> Self {
-        Self { satellites }
-    }
-    pub fn push(&mut self, satellite: Satellite<BigInt>) {
-        self.satellites.push(satellite)
+    pub fn calc_coef_x(&self) -> Vec<Vec<PoDCoef<BigInt>>> {
+        self.satellite
+            .terminals
+            .par_iter()
+            .enumerate()
+            .map(|(i, t1)| {
+                self.satellite
+                    .terminals
+                    .iter()
+                    .filter_map(|t2| {
+                        let coef = self.kernel.eval(&t1.get_pos(), &t2.get_pos());
+                        if coef.fixed_is_zero() {
+                            None
+                        } else {
+                            Some(PoDCoef {
+                                index: i,
+                                coef,
+                                x: t2.alpha.rspr.clone(),
+                            })
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
     }
 }

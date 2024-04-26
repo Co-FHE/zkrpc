@@ -8,8 +8,9 @@ edition = "2021"
 [dependencies]
 num-bigint = "0.4.4"
 num-rational = "0.4.1"
-rust_decimal = "1.35.0"
+rust_decimal = { version = "1.35.0", features = ["maths"] }
 config = { path = "../config" }
 lazy_static = "1.4.0"
 tracing = "0.1.40"
 thiserror = "1.0.59"
+num-traits = "0.2.18"

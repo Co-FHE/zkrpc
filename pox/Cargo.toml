@@ -11,3 +11,5 @@ config = { path = "../config" }
 logger = { path = "../logger" }
 da-layer = { path = "../da-layer" }
 num-bigint = "0.4.4"
+rust_decimal = "1.35.0"
+rayon = "1.10.0"
