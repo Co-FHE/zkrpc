@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+
 use proj::{ProjCreateError, ProjError};
 use thiserror::Error;
 
@@ -11,4 +13,6 @@ pub enum Error {
     LatLonErr(f64, f64, #[source] ProjError),
     #[error("proj convert error: {0}, {1}, {2}")]
     ProjErr(String, String, #[source] ProjCreateError),
+    #[error("Parse error: {0}, {1}")]
+    ParseErr(String, #[source] ParseIntError),
 }

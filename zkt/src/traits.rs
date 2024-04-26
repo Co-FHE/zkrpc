@@ -5,7 +5,7 @@ use halo2curves::ff::Field;
 // Note: traits.rs is provided as an example and feel free for editing.
 // Need 3 functions: gen_proof, verify_proof, setup
 
-// Target of zk is without disclosing the parameters of the terminal : coordinates and alpha
+// Target of zk is: without disclosing the parameters of the terminal : coordinates and alpha
 // (not disclosing means not having to submit them to the chain)
 // it is able to correctly calculate the weight of each terminal.
 
