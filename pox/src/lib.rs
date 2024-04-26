@@ -43,7 +43,7 @@ where
             zk_prover: zkp,
         }
     }
-    pub fn eval(&self) -> Vec<Result<PoDResult, Error>> {
+    pub fn eval_pod(&self) -> Vec<Result<PoDResult, Error>> {
         let coefx: Vec<(Vec<_>, Alpha<BigInt>)> = self
             .satellite
             .terminals

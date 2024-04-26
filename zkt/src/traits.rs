@@ -22,7 +22,7 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 pub trait ZkTraitHalo2<F: Field>: std::marker::Sync {
-    //
+    // coef \dot x = a
     fn gen_proof(
         &self,
         coef: Vec<F>,
