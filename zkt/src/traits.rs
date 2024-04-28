@@ -1,6 +1,6 @@
 use std::fmt;
 
-use halo2curves::ff::Field;
+use halo2_proofs::arithmetic::Field;
 // To Mike:
 // Note: traits.rs is provided as an example and feel free for editing.
 // Need 3 functions: gen_proof, verify_proof, setup

@@ -6,9 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#halo2_proofs = { git = "https://github.com/zcash/halo2.git", version = "0.3"}
-halo2_proofs = { git = "https://github.com/LiuJiazheng/halo2", version = "0.2"}
-plotters = { version = "0.3.0", default-features = true, optional = true }
-halo2curves = "0.1"
-# rand_core = { version = "0.6", default-features = false }
+halo2_proofs = { git = "https://github.com/zcash/halo2.git", version = "0.3"}
 rand_core = "0.6"
+# halo2_proofs = { git = "https://github.com/LiuJiazheng/halo2", version = "0.2"}
+# plotters = { version = "0.3.0", default-features = true, optional = true }
+# halo2curves = "0.1"
+# rand_core = { version = "0.6", default-features = false }
