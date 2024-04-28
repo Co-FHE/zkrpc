@@ -4,24 +4,17 @@ use halo2_proofs::{
     arithmetic::Field,
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
     plonk::{
-        create_proof, keygen_pk, keygen_vk, verify_proof, Advice, Circuit, Column,
-        ConstraintSystem, Constraints, Error, Instance, Selector, SingleVerifier,
+        create_proof, keygen_pk, keygen_vk, Advice, Circuit, Column, ConstraintSystem, Constraints,
+        Error, Instance, Selector,
     },
     poly::{commitment::Params, Rotation},
 };
-// use halo2curves::serde::SerdeObject;
 
-use std::{
-    fmt::Debug,
-    fs::File,
-    io::{BufReader, BufWriter, Write},
-};
+use std::fmt::Debug;
 
-use halo2_proofs::arithmetic::CurveAffine;
-use halo2_proofs::dev::MockProver;
-use halo2_proofs::pasta::{Eq, EqAffine, Fp};
-use halo2_proofs::poly::commitment::{Guard, MSM};
-use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255, EncodedChallenge};
+use halo2_proofs::pasta::{EqAffine, Fp};
+
+use halo2_proofs::transcript::{Blake2bWrite, Challenge255};
 
 // use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use rand_core::OsRng;
@@ -233,7 +226,7 @@ pub fn gen_proof() -> (Vec<u8>, Vec<u8>) {
     let x3 = Fp::from(13);
     let out = x1 * a + x2 * b + x3 * c;
     println!("Public out=:{:?}", out);
-    let pubinputs = vec![out];
+    let _pubinputs = vec![out];
 
     // Instantiate the circuit with the private inputs.
     let circuit = MyCircuit {
@@ -287,22 +280,14 @@ pub fn gen_proof() -> (Vec<u8>, Vec<u8>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        fs::File,
-        io::{BufReader, BufWriter, Write},
-    };
 
-    use halo2_proofs::arithmetic::CurveAffine;
-    use halo2_proofs::circuit::{Cell, Layouter, SimpleFloorPlanner, Value};
-    use halo2_proofs::dev::MockProver;
-    use halo2_proofs::pasta::{Eq, EqAffine, Fp};
-    use halo2_proofs::plonk::{
-        create_proof, keygen_pk, keygen_vk, verify_proof, Advice, Assigned, BatchVerifier, Circuit,
-        Column, ConstraintSystem, Error, Fixed, SingleVerifier, TableColumn, VerificationStrategy,
-    };
-    use halo2_proofs::poly::commitment::{Guard, MSM};
-    use halo2_proofs::poly::{commitment::Params, Rotation};
-    use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255, EncodedChallenge};
+    use halo2_proofs::circuit::Value;
+
+    use halo2_proofs::pasta::{EqAffine, Fp};
+    use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, verify_proof, SingleVerifier};
+
+    use halo2_proofs::poly::commitment::Params;
+    use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255};
 
     // use halo2curves::bn256::{Bn256, Fr, G1Affine};
     use rand_core::OsRng;
