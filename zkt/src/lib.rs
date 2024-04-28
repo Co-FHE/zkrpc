@@ -26,6 +26,9 @@ use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255, EncodedC
 // use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use rand_core::OsRng;
 
+mod traits;
+pub use traits::ZkTraitHalo2;
+
 // use halo2_proofs::{dev::MockProver, pasta::Fp};
 
 /// Circuit design:
@@ -301,7 +304,7 @@ mod tests {
     use halo2_proofs::poly::{commitment::Params, Rotation};
     use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255, EncodedChallenge};
 
-    use halo2curves::bn256::{Bn256, Fr, G1Affine};
+    // use halo2curves::bn256::{Bn256, Fr, G1Affine};
     use rand_core::OsRng;
 
     #[test]
