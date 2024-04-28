@@ -12,6 +12,7 @@ pub struct Model {
     pub ip_packet_data: Vec<u8>,
     #[sea_orm(primary_key)]
     pub id: i64,
+    pub satellite_validator_address: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -15,4 +15,6 @@ pub enum Error {
     ProjErr(String, String, #[source] ProjCreateError),
     #[error("Parse error: {0}, {1}")]
     ParseErr(String, #[source] ParseIntError),
+    #[error("Types error: {0}")]
+    TypesError(#[from] types::Error),
 }

@@ -15,3 +15,8 @@ da_layer: !MockDaLayerConfig
   user: root
   password: root
   database: test
+pox:
+  cooridnate_precision_bigint: 3
+  rspr_precision_bigint: 4
+  sigma_range: '3.0'
+  sigma: '40000'

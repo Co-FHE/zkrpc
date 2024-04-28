@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use config::config::PoxConfig;
 use halo2_proofs::{pasta::Fp, poly};
 use num_bigint::{BigInt, ToBigInt};
 use num_rational::Ratio;
-use types::{Alpha, Error, FixedPoint, FixedPointInteger, Satellite, Terminal};
+use types::{Alpha, Error, FixedPoint, FixedPointInteger, GetPos2D, Pos2D, Satellite, Terminal};
 mod math;
 use math::*;
 use rayon::prelude::*;
@@ -21,12 +22,18 @@ pub struct PoX<K: Kernel<Pos2D<BigInt>, BigInt>, ZK: zkt::ZkTraitHalo2<Fp>> {
     zk_prover: ZK,
     kernel: K,
     satellite: Satellite<BigInt>,
+    config: PoxConfig,
 }
 impl<ZK> PoX<Quadratic<BigInt>, ZK>
 where
     ZK: zkt::ZkTraitHalo2<Fp>,
 {
-    pub fn new(satellite: Satellite<BigInt>, kernel: Quadratic<BigInt>, zkp: ZK) -> Self {
+    pub fn new(
+        satellite: Satellite<BigInt>,
+        kernel: Quadratic<BigInt>,
+        zkp: ZK,
+        cfg: PoxConfig,
+    ) -> Self {
         let mut terminals = satellite.terminals.clone();
 
         let mut counts = HashMap::new();
@@ -41,6 +48,7 @@ where
             kernel,
             satellite,
             zk_prover: zkp,
+            config: cfg,
         }
     }
     pub fn eval_pod(&self) -> Vec<Result<PoDResult, Error>> {
@@ -55,7 +63,7 @@ where
                         .terminals
                         .iter()
                         .filter_map(|t2| {
-                            let coef = self.kernel.eval(&t1.get_pos(), &t2.get_pos());
+                            let coef = self.kernel.eval(&t1.get_pos_2d(), &t2.get_pos_2d());
                             if coef.fixed_is_zero() {
                                 None
                             } else {

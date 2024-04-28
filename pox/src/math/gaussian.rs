@@ -2,25 +2,10 @@ use std::ops::{Add, Div, Mul, Sub};
 
 use num_bigint::BigInt;
 use rust_decimal::{prelude::Zero, Decimal, MathematicalOps};
-use types::{Error, FixedPoint, FixedPointOps, Terminal};
+use types::{Error, FixedPoint, FixedPointOps, Pos2D, Terminal};
 pub trait PosTrait<T: FixedPoint> {
     fn dist(&self, target: &Self) -> Result<T, Error>;
     fn dist_sqr(&self, target: &Self) -> T;
-}
-pub struct Pos2D<T: FixedPoint> {
-    x: T,
-    y: T,
-}
-impl<T: FixedPoint> GetPos2D<T> for Terminal<T> {
-    fn get_pos(&self) -> Pos2D<T> {
-        Pos2D {
-            x: self.x.clone(),
-            y: self.y.clone(),
-        }
-    }
-}
-pub trait GetPos2D<T: FixedPoint> {
-    fn get_pos(&self) -> Pos2D<T>;
 }
 impl<T> PosTrait<T> for Pos2D<T>
 where

@@ -16,22 +16,28 @@ pub struct Model {
     pub disconnect_time: Option<i64>,
     pub net_latency: i32,
     pub droped_ip_packets: Option<String>,
-    pub terminal_address: Option<String>,
-    pub satellite_validator_address: Option<String>,
+    pub terminal_address: String,
+    pub satellite_validator_address: String,
     #[sea_orm(primary_key)]
     pub id: i64,
+    #[sea_orm(column_type = "Float", nullable)]
+    pub latitude: Option<f32>,
+    #[sea_orm(column_type = "Float", nullable)]
+    pub longitude: Option<f32>,
 }
+
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
         belongs_to = "super::terminal::Entity",
-        from = "Column::TerminalMac",
-        to = "super::terminal::Column::Mac"
+        from = "Column::TerminalAddress",
+        to = "super::terminal::Column::Address",
+        on_update = "NoAction",
+        on_delete = "NoAction"
     )]
     Terminal,
 }
 
-// `Related` trait has to be implemented by hand
 impl Related<super::terminal::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Terminal.def()

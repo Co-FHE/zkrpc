@@ -15,6 +15,8 @@ mod rpc_config;
 pub use rpc_config::*;
 mod da_layer_config;
 pub use da_layer_config::*;
+mod pox_config;
+pub use pox_config::*;
 mod constants;
 pub use constants::*;
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
@@ -23,6 +25,7 @@ pub struct Config {
     pub log: LogConfig,
     pub rpc: RpcConfig,
     pub da_layer: DaLayerConfig,
+    pub pox: PoxConfig,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -30,6 +33,7 @@ impl Default for Config {
             log: LogConfig::default(),
             rpc: RpcConfig::default(),
             da_layer: DaLayerConfig::default(),
+            pox: PoxConfig::default(),
         }
     }
 }

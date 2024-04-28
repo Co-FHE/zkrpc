@@ -17,3 +17,4 @@ num-traits = "0.2.18"
 halo2_proofs = "0.3.0"
 halo2curves = "0.6.1"
 zkt = { path = "../zkt" }
+flat_projection = "0.4.0"

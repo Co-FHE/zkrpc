@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::error::Error;
-use crate::{ip_packets, satellite, terminal};
+use crate::{ip_packets, satellite, satellite_track, terminal};
 use config::config::MySQLConfig;
 use sea_orm::{ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, QueryOrder};
 use sea_orm::{JoinType, QuerySelect};
@@ -10,6 +10,7 @@ use tracing::{info, warn};
 use super::prelude::*;
 use super::terminal_track;
 
+#[derive(Clone, Debug)]
 pub struct Db {
     config: MySQLConfig,
     db: sea_orm::DatabaseConnection,
@@ -37,6 +38,27 @@ impl Db {
 }
 
 impl Db {
+    pub async fn find_all_satellite_track_with_single_satellite_block_from_to(
+        &self,
+        satellite_address: &str,
+        block_height_from: u64,
+        block_height_to: u64,
+    ) -> Result<Vec<satellite_track::Model>, Error> {
+        satellite_track::Entity::find()
+            .filter(satellite_track::Column::BlockNumber.lte(block_height_to))
+            .filter(satellite_track::Column::BlockNumber.gte(block_height_from))
+            .filter(satellite_track::Column::ValidatorAddress.eq(satellite_address))
+            .order_by_asc(satellite_track::Column::BlockNumber)
+            .all(&self.db)
+            .await
+            .map_err(|e| {
+                Error::DbErr(
+                    "find_all_satellite_track_with_single_statellite_block_from_to error"
+                        .to_string(),
+                    e,
+                )
+            })
+    }
     pub async fn find_all_terminal_track_with_single_satellite_block_from_to(
         &self,
         satellite_address: &str,
@@ -67,11 +89,14 @@ impl Db {
             })?
             .into_iter()
             .filter_map(|(tt, t)| match t {
-                Some(t) => Some((tt, t)),
+                Some(t) => {
+                    assert!(tt.terminal_address == t.address);
+                    Some((tt, t))
+                }
                 None => {
                     warn!(
                         "address {} in terminal_track not found in table track",
-                        tt.terminal_address.as_ref().unwrap()
+                        tt.terminal_address
                     );
                     None
                 }
@@ -82,15 +107,15 @@ impl Db {
     }
     pub async fn find_all_ip_packets_with_single_satellite_block_from_to(
         &self,
-        satellite_mac: &str,
+        satellite_address: &str,
         block_height_from: u64,
         block_height_to: u64,
-    ) -> Result<HashMap<(String, u64), Vec<ip_packets::Model>>, Error> {
+    ) -> Result<Vec<ip_packets::Model>, Error> {
         let ip_packets = IpPackets::find()
             .filter(ip_packets::Column::BlockNumber.lte(block_height_to))
             .filter(ip_packets::Column::BlockNumber.gte(block_height_from))
             // TODO: use satellite_address
-            .filter(ip_packets::Column::SatelliteMac.eq(satellite_mac))
+            .filter(ip_packets::Column::SatelliteValidatorAddress.eq(satellite_address))
             // .inner_join(terminal::Entity)
             // .join(
             //     JoinType::InnerJoin,
@@ -107,13 +132,7 @@ impl Db {
                     "find_all_ip_packets_with_single_satellite_block_from_to error".to_string(),
                     e,
                 )
-            })?
-            .iter()
-            .fold(HashMap::new(), |mut acc, a| {
-                let key = (a.satellite_mac.to_owned(), a.block_number as u64);
-                acc.entry(key).or_insert_with(Vec::new).push(a.to_owned());
-                acc
-            });
+            })?;
 
         Ok(ip_packets)
     }
@@ -136,6 +155,28 @@ mod tests {
         })
         .await
         .unwrap();
+    }
+    #[tokio::test]
+    // #[cfg(exclude)]
+    async fn test_db_find_all_satellite_track_with_single_satellite_block_from_to() {
+        let _guard = init_logger_for_test!();
+
+        let cfg = config::config::Config::new().unwrap();
+        let db = Db::new({
+            let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+            cfg
+        })
+        .await
+        .unwrap();
+        let result = db
+            .find_all_satellite_track_with_single_satellite_block_from_to(
+                "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
+                180000,
+                500715,
+            )
+            .await
+            .unwrap();
+        info!("result len: {}", result.len());
     }
     #[tokio::test]
     // #[cfg(exclude)]

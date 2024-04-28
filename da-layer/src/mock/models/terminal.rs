@@ -10,12 +10,21 @@ pub struct Model {
     pub latitude: f32,
     #[sea_orm(column_type = "Float")]
     pub longitude: f32,
-    pub address: Option<String>,
+    pub address: String,
     #[sea_orm(primary_key)]
     pub id: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(has_many = "super::terminal_track::Entity")]
+    TerminalTrack,
+}
+
+impl Related<super::terminal_track::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TerminalTrack.def()
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}
