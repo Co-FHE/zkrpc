@@ -32,4 +32,10 @@ pub trait ZkTraitHalo2<F: Field>: std::marker::Sync {
     ) -> Result<(Vec<u8>, Vec<u8>), Error>;
     // TODO: add verify_proof function
     // TODO: add setup function
+
+    fn verify_proof(_out: Vec<u8>, _proof: Vec<u8>) -> bool {
+        true
+    }
+
+    fn setup() {}
 }

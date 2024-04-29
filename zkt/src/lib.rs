@@ -10,14 +10,12 @@ use halo2_proofs::{
     poly::{commitment::Params, Rotation},
 };
 
-use std::fmt::Debug;
-
 use halo2_proofs::pasta::{EqAffine, Fp};
-
 use halo2_proofs::transcript::{Blake2bWrite, Challenge255};
 
 // use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use rand_core::OsRng;
+use std::fmt::Debug;
 
 mod traits;
 pub use traits::ZkTraitHalo2;
@@ -44,26 +42,28 @@ struct Number<F: Field>(AssignedCell<F, F>);
 
 #[derive(Default, Clone)]
 struct MyCircuit<F: Field> {
-    // constant: F,
-    a: Value<F>,
-    b: Value<F>,
-    c: Value<F>,
-    x1: Value<F>,
-    x2: Value<F>,
-    x3: Value<F>,
+    coefs: Vec<Value<F>>,
+    xs: Vec<Value<F>>,
 }
 
 fn load_private<F: Field>(
     config: &CircuitConfig,
     mut layouter: impl Layouter<F>,
-    value: Value<F>,
-) -> Result<Number<F>, Error> {
+    coef_value: Value<F>,
+    x_value: Value<F>,
+) -> Result<(Number<F>, Number<F>), Error> {
     layouter.assign_region(
         || "load private",
         |mut region| {
-            region
-                .assign_advice(|| "private input", config.advice[0], 0, || value)
-                .map(Number)
+            let coef = region
+                .assign_advice(|| "private input coef", config.advice[0], 0, || coef_value)
+                .map(Number);
+
+            let x = region
+                .assign_advice(|| "private input x", config.advice[1], 0, || x_value)
+                .map(Number);
+
+            Ok((coef?, x?))
         },
     )
 }
@@ -191,18 +191,42 @@ impl<F: Field> Circuit<F> for MyCircuit<F> {
         config: Self::Config,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        let a = load_private(&config, layouter.namespace(|| "load a"), self.a)?;
-        let b = load_private(&config, layouter.namespace(|| "load b"), self.b)?;
-        let c = load_private(&config, layouter.namespace(|| "load c"), self.c)?;
-        let x1 = load_private(&config, layouter.namespace(|| "load x1"), self.x1)?;
-        let x2 = load_private(&config, layouter.namespace(|| "load x2"), self.x2)?;
-        let x3 = load_private(&config, layouter.namespace(|| "load x3"), self.x3)?;
+        let len = self.coefs.len();
+        let mut number_vec: Vec<(Number<F>, Number<F>)> = Vec::new();
+        for i in 0..len {
+            let a_pair = load_private(
+                &config,
+                layouter.namespace(|| "load private pair of coef and x"),
+                self.coefs[i].clone(),
+                self.xs[i].clone(),
+            )?;
+            number_vec.push(a_pair);
+        }
 
-        let x1a = mul(&config, layouter.namespace(|| "x1*a"), x1, a)?;
-        let x2b = mul(&config, layouter.namespace(|| "x2*b"), x2, b)?;
-        let x3c = mul(&config, layouter.namespace(|| "x3*c"), x3, c)?;
-        let t1 = add(&config, layouter.namespace(|| "x1a+x2b"), x1a, x2b)?;
-        let out = add(&config, layouter.namespace(|| "t1+x3c"), t1, x3c)?;
+        let mut product_vec: Vec<Number<F>> = Vec::new();
+        for i in 0..len {
+            let product = mul(
+                &config,
+                layouter.namespace(|| "coef * x"),
+                number_vec[i].0.clone(),
+                number_vec[i].1.clone(),
+            )?;
+            product_vec.push(product);
+        }
+
+        let mut vleft = product_vec[0].clone();
+        for i in 1..product_vec.len() {
+            let vright = product_vec[i].clone();
+
+            vleft = add(
+                &config,
+                layouter.namespace(|| "vleft + vright"),
+                vleft,
+                vright,
+            )?;
+        }
+
+        let out = vleft;
 
         //expose public
         layouter
@@ -211,38 +235,33 @@ impl<F: Field> Circuit<F> for MyCircuit<F> {
     }
 }
 
-pub fn gen_proof() -> (Vec<u8>, Vec<u8>) {
+pub fn gen_proof(coefs: Vec<Fp>, xs: Vec<Fp>) -> Result<(Vec<u8>, Vec<u8>), traits::Error> {
     // ANCHOR: test-circuit
     // The number of rows in our circuit cannot exceed 2^k. Since our example
     // circuit is very small, we can pick a very small value here.
     let k = 5;
 
     // Prepare the private and public inputs to the circuit!
-    let a = Fp::from(1);
-    let b = Fp::from(2);
-    let c = Fp::from(3);
-    let x1 = Fp::from(10);
-    let x2 = Fp::from(12);
-    let x3 = Fp::from(13);
-    let out = x1 * a + x2 * b + x3 * c;
+    use std::iter::zip;
+
+    let sum: Fp = zip(coefs.clone(), xs.clone())
+        .map(|(coef, x)| coef * x)
+        .sum();
+    let out = sum;
     println!("Public out=:{:?}", out);
-    let _pubinputs = vec![out];
+    let pubinputs = vec![out];
+
+    let coefs = coefs.into_iter().map(Value::known).collect();
+    let xs = xs.into_iter().map(Value::known).collect();
 
     // Instantiate the circuit with the private inputs.
-    let circuit = MyCircuit {
-        a: Value::known(a),
-        b: Value::known(b),
-        c: Value::known(c),
-        x1: Value::known(x1),
-        x2: Value::known(x2),
-        x3: Value::known(x3),
-    };
+    let circuit = MyCircuit { coefs, xs };
 
     let params: Params<EqAffine> = Params::new(k);
     let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
     let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
 
-    let instances: &[&[Fp]] = &[&[out]];
+    let instances: &[&[Fp]] = &[&pubinputs];
     // let vu8_out = out.to_raw_bytes();
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
     // Create a proof
@@ -274,12 +293,13 @@ pub fn gen_proof() -> (Vec<u8>, Vec<u8>) {
     // .is_ok());
 
     let vecu8_out = format!("{:?}", out).as_bytes().to_vec();
-    (vecu8_out, proof)
+    Ok((vecu8_out, proof))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::iter::zip;
 
     use halo2_proofs::circuit::Value;
 
@@ -300,31 +320,33 @@ mod tests {
         let k = 5;
 
         // Prepare the private and public inputs to the circuit!
-        let a = Fp::from(1);
-        let b = Fp::from(2);
-        let c = Fp::from(3);
         let x1 = Fp::from(10);
         let x2 = Fp::from(12);
         let x3 = Fp::from(13);
-        let out = x1 * a + x2 * b + x3 * c;
+        let coefs = vec![x1, x2, x3];
+        let a = Fp::from(1);
+        let b = Fp::from(2);
+        let c = Fp::from(3);
+        let xs = vec![a, b, c];
+
+        let sum: Fp = zip(coefs.clone(), xs.clone())
+            .map(|(coef, x)| coef * x)
+            .sum();
+        let out = sum;
         println!("Public out=:{:?}", out);
         let pubinputs = vec![out];
 
+        let coefs = coefs.into_iter().map(Value::known).collect();
+        let xs = xs.into_iter().map(Value::known).collect();
+
         // Instantiate the circuit with the private inputs.
-        let circuit = MyCircuit {
-            a: Value::known(a),
-            b: Value::known(b),
-            c: Value::known(c),
-            x1: Value::known(x1),
-            x2: Value::known(x2),
-            x3: Value::known(x3),
-        };
+        let circuit = MyCircuit { coefs, xs };
 
         let params: Params<EqAffine> = Params::new(k);
         let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
         let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
 
-        let instances: &[&[Fp]] = &[&[out]];
+        let instances: &[&[Fp]] = &[&pubinputs];
         // let vu8_out = out.to_raw_bytes();
         let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
         // Create a proof
@@ -351,7 +373,7 @@ mod tests {
             &params,
             pk.get_vk(),
             strategy,
-            &[&[&pubinputs[..]], &[&pubinputs[..]]],
+            &[&[&pubinputs[..]]],
             &mut transcript,
         )
         .is_ok());
