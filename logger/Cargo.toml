@@ -17,3 +17,4 @@ tracing-subscriber = { version = "0.3.18", features = [
 config = { path = "../config" }
 anyhow = "1.0.82"
 tracing-appender = "0.2.3"
+lazy_static = "1.4.0"

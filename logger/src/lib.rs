@@ -1,9 +1,16 @@
 use config::config::LogConfig;
 use config::config::BASE_CONFIG;
+use lazy_static::lazy_static;
+use std::sync::Mutex;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::RollingFileAppender;
 use tracing_subscriber::fmt::{self};
 use tracing_subscriber::EnvFilter;
+
+lazy_static! {
+    static ref INIT: Mutex<bool> = Mutex::new(false);
+}
+
 pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
     let filter = EnvFilter::new(&cfg.log_level);
     let (non_blocking, guard) = if cfg.write_to_file {
@@ -25,7 +32,11 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
         .with_line_number(cfg.show_line_number)
         .with_target(cfg.show_with_target)
         .finish();
-    tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
+    let mut init = INIT.lock().unwrap();
+    if !*init {
+        tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
+        *init = true;
+    }
     guard
 }
 #[macro_export]

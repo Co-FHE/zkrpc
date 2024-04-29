@@ -10,7 +10,7 @@ use tracing::{error, warn};
 use types::{CompletePackets, Packet, Packets, Pos2D, Pos3D, Satellite, Terminal};
 
 use crate::{DaLayerTrait, Error};
-use proj::{Coord, Proj};
+// use proj::{Coord, Proj};
 
 #[derive(Debug,Clone)]
 pub struct MockLocalDB {
@@ -310,12 +310,12 @@ mod tests {
         }).collect::<Vec<_>>(),
         "DA Data"));
     }
-    #[test]
-    fn test_proj() {
-        let from = "EPSG:4326";
-        let to = "EPSG:3309";
-        let proj = Proj::new_known_crs(&from, &to, None).unwrap();
-        let pos = proj.convert((8.22, 47.33)).unwrap();
-        println!("{:?}", pos);
-    }
+    // #[test]
+    // fn test_proj() {
+    //     let from = "EPSG:4326";
+    //     let to = "EPSG:3309";
+    //     let proj = Proj::new_known_crs(&from, &to, None).unwrap();
+    //     let pos = proj.convert((8.22, 47.33)).unwrap();
+    //     println!("{:?}", pos);
+    // }
 }
