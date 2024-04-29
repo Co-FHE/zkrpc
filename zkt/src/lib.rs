@@ -296,6 +296,21 @@ pub fn gen_proof(coefs: Vec<Fp>, xs: Vec<Fp>) -> Result<(Vec<u8>, Vec<u8>), trai
     Ok((vecu8_out, proof))
 }
 
+pub struct ZKT;
+
+impl traits::ZkTraitHalo2 for ZKT {
+    type F = Fp;
+    fn gen_proof(
+        &self,
+        coefs: Vec<Self::F>,
+        xs: Vec<Self::F>,
+        // TODO: add other parameters
+        // e.g. setup parameters
+    ) -> Result<(Vec<u8>, Vec<u8>), traits::Error> {
+        gen_proof(coefs, xs)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

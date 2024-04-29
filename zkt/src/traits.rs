@@ -21,12 +21,13 @@ impl fmt::Display for Error {
 }
 impl std::error::Error for Error {}
 
-pub trait ZkTraitHalo2<F: Field>: std::marker::Sync {
+pub trait ZkTraitHalo2: std::marker::Sync {
+    type F: Field;
     // coef \dot x = a
     fn gen_proof(
         &self,
-        coef: Vec<F>,
-        x: Vec<F>,
+        coefs: Vec<Self::F>,
+        xs: Vec<Self::F>,
         // TODO: add other parameters
         // e.g. setup parameters
     ) -> Result<(Vec<u8>, Vec<u8>), Error>;
