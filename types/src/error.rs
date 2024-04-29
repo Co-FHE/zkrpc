@@ -17,4 +17,6 @@ pub enum Error {
     BigIntConversionErr(String),
     #[error("Error conversion from Decimal: {0}, Exp: {1}")]
     DecimalErr(Decimal, u32),
+    #[error("Merkle tree error: {0}")]
+    MerkleTreeErr(String),
 }

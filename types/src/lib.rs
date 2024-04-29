@@ -4,3 +4,7 @@ mod fixed_point;
 pub use fixed_point::*;
 mod pos;
 pub use pos::*;
+mod merkle;
+pub use merkle::*;
+mod error;
+pub use error::*;

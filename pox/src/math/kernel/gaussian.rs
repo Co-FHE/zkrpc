@@ -3,24 +3,9 @@ use std::ops::{Add, Div, Mul, Sub};
 use num_bigint::BigInt;
 use rust_decimal::{prelude::Zero, Decimal, MathematicalOps};
 use types::{Error, FixedPoint, FixedPointOps, Pos2D, Terminal};
-pub trait PosTrait<T: FixedPoint> {
-    fn dist(&self, target: &Self) -> Result<T, Error>;
-    fn dist_sqr(&self, target: &Self) -> T;
-}
-impl<T> PosTrait<T> for Pos2D<T>
-where
-    T: FixedPoint,
-{
-    fn dist(&self, target: &Self) -> Result<T, Error> {
-        ((self.x.clone() - target.x.clone()).fixed_sqr()
-            + (self.y.clone() - target.y.clone()).fixed_sqr())
-        .fixed_sqrt()
-    }
-    fn dist_sqr(&self, target: &Self) -> T {
-        ((self.x.clone() - target.x.clone()).fixed_sqr()
-            + (self.y.clone() - target.y.clone()).fixed_sqr())
-    }
-}
+
+use crate::{Kernel, PosTrait};
+
 // trait GaussianImp{}
 struct GaussianVanilla<const CALC_COEF: bool> {}
 struct GaussianTylor {
@@ -29,11 +14,6 @@ struct GaussianTylor {
 }
 // impl GaussianImp for GaussianTylor{}
 // impl GaussianImp for GaussianVanilla{}
-
-pub trait Kernel<P: PosTrait<T>, T: FixedPoint> {
-    fn eval(&self, x1: &P, x2: &P) -> T;
-}
-
 // s^2 - x^2
 pub struct Quadratic<T: FixedPoint> {
     pub max_dis_sqr: T,

@@ -1,9 +1,12 @@
+use config::config::PoxConfig;
 // use config::config::{COORDINATE_PRECISION_BIGINT, RSPR_PRECISION_BIGINT};
 use lazy_static::lazy_static;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use rust_decimal::Decimal;
 
-use crate::{Error, FixedPoint, FixedPointDecimal, FixedPointInteger, Packets, Pos2D};
+use crate::{
+    EndPointFrom, Error, FixedPoint, FixedPointDecimal, FixedPointInteger, Packets, Pos2D,
+};
 
 // lazy_static! {
 //     static ref COORDINATE_MULTIPLIER_BIGINT: BigInt = BigUint::from(10u32)
@@ -89,6 +92,22 @@ impl Terminal<Decimal> {
             position: Pos2D::<Decimal>::new_from_f64(x, y)?,
             alpha: Alpha::<Decimal>::new_from_f64(alpha)?,
             terminal_packets: packets,
+        })
+    }
+}
+impl EndPointFrom<Terminal<Decimal>> for Terminal<BigInt> {
+    fn from_with_config(value: Terminal<Decimal>, cfg: &PoxConfig) -> Result<Self, Error> {
+        Ok(Self {
+            address: value.address,
+            position: Pos2D::<BigInt>::new_from_decimal(
+                value.position.x,
+                value.position.y,
+                cfg.cooridnate_precision_bigint,
+            )?,
+            alpha: Alpha::<BigInt> {
+                rspr: BigInt::fixed_from_decimal(value.alpha.rspr, cfg.rspr_precision_bigint)?,
+            },
+            terminal_packets: value.terminal_packets,
         })
     }
 }

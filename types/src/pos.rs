@@ -10,9 +10,9 @@ pub struct Pos2D<T: FixedPoint> {
 }
 #[derive(Debug, Clone)]
 pub struct Pos3D<T: FixedPoint> {
-    x: T,
-    y: T,
-    height: T,
+    pub x: T,
+    pub y: T,
+    pub height: T,
 }
 impl Pos3D<Decimal> {
     pub fn new_from_f64(x: f64, y: f64, height: f64) -> Result<Self, Error> {
@@ -76,6 +76,27 @@ impl Pos2D<BigInt> {
         Ok(Self {
             x: BigInt::fixed_from_decimal(x, exp)?,
             y: BigInt::fixed_from_decimal(y, exp)?,
+        })
+    }
+}
+impl Pos3D<BigInt> {
+    pub fn new_from_f64(x: f64, y: f64, coordinate_multiplier: &BigInt) -> Result<Self, Error> {
+        Ok(Self {
+            x: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
+            y: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
+            height: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
+        })
+    }
+    pub fn new_from_decimal(
+        x: Decimal,
+        y: Decimal,
+        height: Decimal,
+        exp: u32,
+    ) -> Result<Self, Error> {
+        Ok(Self {
+            x: BigInt::fixed_from_decimal(x, exp)?,
+            y: BigInt::fixed_from_decimal(y, exp)?,
+            height: BigInt::fixed_from_decimal(height, exp)?,
         })
     }
 }

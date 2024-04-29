@@ -129,7 +129,7 @@ impl FixedPointInteger for BigInt {
             error!("{:?}", e);
             e
         })? * multiplier;
-        return Ok(r.round().to_integer());
+        return Ok(r.to_integer());
     }
 
     fn to_fp(&self) -> Result<Fp, Error> {
@@ -151,7 +151,7 @@ impl FixedPointInteger for BigInt {
             error!("{:?}", e);
             e
         })?;
-        let as_bigint = BigInt::from_str(&multiplied_decimal.round().to_string()).map_err(|e| {
+        let as_bigint = BigInt::from_str(&multiplied_decimal.to_string()).map_err(|e| {
             let e = Error::BigIntConversionErr(e.to_string());
             error!("{:?}", e);
             e
