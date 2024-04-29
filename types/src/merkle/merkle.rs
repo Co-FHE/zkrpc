@@ -1,14 +1,18 @@
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleProof, MerkleTree};
-use tracing::error;
+use tracing::{debug, error, field::debug};
 
 use crate::Error;
 
+#[derive(Debug, Clone)]
 pub struct MerkleProofStruct {
     pub reference_merkle_tree_root: [u8; 32],
     pub dropped_merkle_tree_root: [u8; 32],
     pub proof: Vec<u8>,
     pub indices_to_prove: Vec<usize>,
     pub leaves_to_prove: Vec<[u8; 32]>,
+}
+pub trait MerkleAble {
+    fn merkle_tree(&self) -> Result<MerkleTree<Sha256>, Error>;
 }
 pub trait MerkleComparison {
     // compare the merkle tree of self with the merkle tree of other
@@ -19,19 +23,13 @@ pub trait MerkleComparison {
 impl MerkleComparison for MerkleTree<Sha256> {
     fn compare(&self, other: &Self) -> Result<Vec<usize>, Error> {
         let mut diff = vec![];
-        let self_leaves = self.leaves().ok_or({
-            error!("Couldn't get the leaves of the merkle tree");
-            Error::MerkleTreeErr(format!(
-                "Couldn't get the leaves of the merkle tree {:?}",
-                self.root()
-            ))
+        let self_leaves = self.leaves().ok_or_else(|| {
+            error!("Couldn't get the leaves of the merkle tree self");
+            Error::MerkleTreeErr(format!("Couldn't get the leaves of the merkle tree self"))
         })?;
-        let other_leaves = other.leaves().ok_or({
-            error!("Couldn't get the leaves of the merkle tree");
-            Error::MerkleTreeErr(format!(
-                "Couldn't get the leaves of the merkle tree {:?}",
-                other.root()
-            ))
+        let other_leaves = other.leaves().ok_or_else(|| {
+            error!("Couldn't get the leaves of the merkle tree other");
+            Error::MerkleTreeErr(format!("Couldn't get the leaves of the merkle tree other"))
         })?;
         for i in 0..self_leaves.len() {
             if self_leaves[i] != other_leaves[i] {
@@ -40,6 +38,7 @@ impl MerkleComparison for MerkleTree<Sha256> {
         }
         Ok(diff)
     }
+    //must dropped (leaves = vec![Sha256::hash(b"")]
     fn comparison_proof(&self, dropped_merkle_tree: &Self) -> Result<MerkleProofStruct, Error> {
         let diff = self.compare(dropped_merkle_tree)?;
         let binding = diff
@@ -48,19 +47,15 @@ impl MerkleComparison for MerkleTree<Sha256> {
             .map(|i| self.leaves().unwrap()[i])
             .collect::<Vec<_>>();
         let merkle_proof = self.proof(&diff);
-        let merkle_root = self.root().ok_or({
-            error!("Couldn't get the leaves of the merkle tree");
+        let merkle_root = self.root().ok_or_else(|| {
+            error!("Couldn't get the Root of the merkle tree reference");
             Error::MerkleTreeErr(format!(
-                "Couldn't get the leaves of the merkle tree {:?}",
-                self.root()
+                "Couldn't get the root of the merkle tree reference"
             ))
         })?;
-        let dropped_merkle_root = dropped_merkle_tree.root().ok_or({
-            error!("Couldn't get the leaves of the merkle tree");
-            Error::MerkleTreeErr(format!(
-                "Couldn't get the leaves of the merkle tree {:?}",
-                self.root()
-            ))
+        let dropped_merkle_root = dropped_merkle_tree.root().ok_or_else(|| {
+            error!("Couldn't get the root of the merkle tree dropped");
+            Error::MerkleTreeErr(format!("Couldn't get the root of the merkle tree dropped"))
         })?;
         Ok(MerkleProofStruct {
             reference_merkle_tree_root: merkle_root,

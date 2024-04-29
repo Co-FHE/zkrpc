@@ -7,6 +7,7 @@ use types::{Error, FixedPoint, FixedPointOps, Pos2D, Terminal};
 use crate::{Kernel, PosTrait};
 
 // trait GaussianImp{}
+#[derive(Clone, Debug)]
 struct GaussianVanilla<const CALC_COEF: bool> {}
 struct GaussianTylor {
     pub max_order: usize,
@@ -15,21 +16,21 @@ struct GaussianTylor {
 // impl GaussianImp for GaussianTylor{}
 // impl GaussianImp for GaussianVanilla{}
 // s^2 - x^2
+#[derive(Clone, Debug)]
 pub struct Quadratic<T: FixedPoint> {
     pub max_dis_sqr: T,
 }
+#[derive(Clone, Debug)]
 struct Gaussian<T, I> {
     sigma: T,
     sigma_sqr: T,
     implement_param: I,
 }
 
-impl<P, T> Kernel<P, T> for Quadratic<T>
-where
-    P: PosTrait<T>,
-    T: FixedPoint,
-{
-    fn eval(&self, x1: &P, x2: &P) -> T {
+impl<T: FixedPoint> Kernel for Quadratic<T> {
+    type BaseType = T;
+    type PosType = Pos2D<T>;
+    fn eval(&self, x1: &Pos2D<T>, x2: &Pos2D<T>) -> T {
         let dis = x1.dist_sqr(x2);
         if dis > self.max_dis_sqr {
             T::fixed_zero()
@@ -39,11 +40,10 @@ where
     }
 }
 
-impl<P, const CALC_COEF: bool> Kernel<P, Decimal> for Gaussian<Decimal, GaussianVanilla<CALC_COEF>>
-where
-    P: PosTrait<Decimal>,
-{
-    fn eval(&self, x1: &P, x2: &P) -> Decimal {
+impl<const CALC_COEF: bool> Kernel for Gaussian<Decimal, GaussianVanilla<CALC_COEF>> {
+    type BaseType = Decimal;
+    type PosType = Pos2D<Decimal>;
+    fn eval(&self, x1: &Pos2D<Decimal>, x2: &Pos2D<Decimal>) -> Decimal {
         let mut sum = Decimal::zero();
         let exp = -x1.dist_sqr(x2) / Decimal::TWO / self.sigma.fixed_sqr();
         let exp = exp.exp();
@@ -57,11 +57,10 @@ where
 }
 //\Sum{(-1/2)^k * x^{2k} / k!}
 //  1 - x^2/2 + x^4/8 - x^6/48 + x^8/384 - x^10/3840
-impl<P> Kernel<P, BigInt> for Gaussian<BigInt, GaussianTylor>
-where
-    P: PosTrait<BigInt>,
-{
-    fn eval(&self, x1: &P, x2: &P) -> BigInt {
+impl Kernel for Gaussian<BigInt, GaussianTylor> {
+    type BaseType = BigInt;
+    type PosType = Pos2D<BigInt>;
+    fn eval(&self, x1: &Self::PosType, x2: &Self::PosType) -> BigInt {
         todo!()
     }
 }

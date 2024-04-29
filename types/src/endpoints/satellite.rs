@@ -7,7 +7,7 @@ use crate::{
     Pos2D, Pos3D,
 };
 use std::{collections::HashMap, fmt::format};
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Satellite<T: FixedPoint> {
     pub epoch: usize,
     pub address: String,

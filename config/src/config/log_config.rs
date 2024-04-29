@@ -81,8 +81,8 @@ impl default::Default for LogConfig {
         Self {
             log_dir: PathBuf::from("logs"),
             log_level: LogLevel::Trace,
-            show_file_path: false,
-            show_line_number: false,
+            show_file_path: true,
+            show_line_number: true,
             show_with_target: true,
             write_to_file: false,
             rotation: LogRotation::Daily,

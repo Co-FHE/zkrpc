@@ -1,5 +1,6 @@
 use types::FixedPoint;
 
-pub trait Penalty<T: FixedPoint> {
-    fn eval(&self, dist: T) -> T;
+pub trait Penalty {
+    type BaseType: FixedPoint;
+    fn eval(&self, dist: Self::BaseType) -> Self::BaseType;
 }

@@ -134,24 +134,25 @@ impl FixedPointInteger for BigInt {
 
     fn to_fp(&self) -> Result<Fp, Error> {
         let (sig, mut bytes) = self.to_u64_digits();
-        if sig == Sign::Minus {
-            let e = Error::NegativeFpErr(self.to_string());
-            error!("{:?}", e);
-            return Err(e);
-        }
         bytes.resize(4, 0);
-        Ok(Fp::from_raw([bytes[0], bytes[1], bytes[2], bytes[3]]))
+
+        if sig == Sign::Minus {
+            Ok(-Fp::from_raw([bytes[0], bytes[1], bytes[2], bytes[3]]))
+        } else {
+            Ok(Fp::from_raw([bytes[0], bytes[1], bytes[2], bytes[3]]))
+        }
     }
 
     fn fixed_from_decimal(value: Decimal, exp: u32) -> Result<Self, Error> {
         // TODO: use shift_left instead of powi
-        let multiplier = Decimal::from(10).powi(exp as i64);
-        let multiplied_decimal = value.checked_mul(multiplier).ok_or({
-            let e = Error::DecimalErr(value, exp);
-            error!("{:?}", e);
-            e
-        })?;
-        let as_bigint = BigInt::from_str(&multiplied_decimal.to_string()).map_err(|e| {
+        let multiplier = Decimal::from(10).powu(exp as u64);
+        let multiplied_decimal = value * multiplier;
+        // ).ok_or({
+        //     let e = Error::DecimalErr(value, exp);
+        //     error!("{}", e.to_string());
+        //     e
+        // })?;
+        let as_bigint = BigInt::from_str(&multiplied_decimal.trunc().to_string()).map_err(|e| {
             let e = Error::BigIntConversionErr(e.to_string());
             error!("{:?}", e);
             e

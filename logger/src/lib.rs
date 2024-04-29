@@ -16,7 +16,7 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
     } else {
         tracing_appender::non_blocking(std::io::stdout())
     };
-
+    println!("{}", cfg.show_line_number);
     let subscriber = fmt::Subscriber::builder()
         .with_env_filter(filter)
         .with_timer(tracing_subscriber::fmt::time::ChronoUtc::rfc_3339())

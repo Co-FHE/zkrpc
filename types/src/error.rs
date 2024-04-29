@@ -19,4 +19,6 @@ pub enum Error {
     DecimalErr(Decimal, u32),
     #[error("Merkle tree error: {0}")]
     MerkleTreeErr(String),
+    #[error("Empty merkle tree")]
+    EmptyMerkleTreeErr,
 }

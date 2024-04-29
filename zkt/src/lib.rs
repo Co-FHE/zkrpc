@@ -17,7 +17,7 @@ use halo2_proofs::transcript::{Blake2bWrite, Challenge255};
 use rand_core::OsRng;
 use std::fmt::Debug;
 
-mod traits;
+pub mod traits;
 pub use traits::ZkTraitHalo2;
 
 // use halo2_proofs::{dev::MockProver, pasta::Fp};

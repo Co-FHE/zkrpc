@@ -101,16 +101,19 @@ impl Pos3D<BigInt> {
     }
 }
 
-pub trait GetPos2D<T: FixedPoint> {
-    fn get_pos_2d(&self) -> Pos2D<T>;
+pub trait GetPos2D {
+    type BaseType: FixedPoint;
+    fn get_pos_2d(&self) -> Pos2D<Self::BaseType>;
 }
-impl<T: FixedPoint> GetPos2D<T> for Terminal<T> {
+impl<T: FixedPoint> GetPos2D for Terminal<T> {
+    type BaseType = T;
     fn get_pos_2d(&self) -> Pos2D<T> {
         self.position.clone()
     }
 }
 
-impl<T: FixedPoint> GetPos2D<T> for Satellite<T> {
+impl<T: FixedPoint> GetPos2D for Satellite<T> {
+    type BaseType = T;
     fn get_pos_2d(&self) -> Pos2D<T> {
         Pos2D {
             x: self.position.x.clone(),

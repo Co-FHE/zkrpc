@@ -10,8 +10,6 @@ pub struct PoxConfig {
     pub cooridnate_precision_bigint: u32,
     pub rspr_precision_bigint: u32,
 
-    pub max_penalty: Decimal,
-
     pub penalty: PenaltyConfig,
     pub kernel: KernelConfig,
 }
@@ -20,7 +18,6 @@ impl Default for PoxConfig {
         Self {
             cooridnate_precision_bigint: 3,
             rspr_precision_bigint: 4,
-            max_penalty: dec!(10000),
             penalty: PenaltyConfig { max_diff: dec!(10) },
             kernel: KernelConfig {
                 gaussian: GaussianConfig {

@@ -1,13 +1,12 @@
 use types::{Error, FixedPoint, Pos2D};
 
-pub trait PosTrait<T: FixedPoint> {
-    fn dist(&self, target: &Self) -> Result<T, Error>;
-    fn dist_sqr(&self, target: &Self) -> T;
+pub trait PosTrait {
+    type BaseType: FixedPoint;
+    fn dist(&self, target: &Self) -> Result<Self::BaseType, Error>;
+    fn dist_sqr(&self, target: &Self) -> Self::BaseType;
 }
-impl<T> PosTrait<T> for Pos2D<T>
-where
-    T: FixedPoint,
-{
+impl<T: FixedPoint> PosTrait for Pos2D<T> {
+    type BaseType = T;
     fn dist(&self, target: &Self) -> Result<T, Error> {
         ((self.x.clone() - target.x.clone()).fixed_sqr()
             + (self.y.clone() - target.y.clone()).fixed_sqr())
@@ -19,6 +18,8 @@ where
     }
 }
 
-pub trait Kernel<P: PosTrait<T>, T: FixedPoint> {
-    fn eval(&self, x1: &P, x2: &P) -> T;
+pub trait Kernel {
+    type BaseType: FixedPoint;
+    type PosType: PosTrait<BaseType = Self::BaseType>;
+    fn eval(&self, x1: &Self::PosType, x2: &Self::PosType) -> Self::BaseType;
 }
