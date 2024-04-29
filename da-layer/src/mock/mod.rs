@@ -12,8 +12,8 @@ use types::{CompletePackets, Packet, Packets, Pos2D, Pos3D, Satellite, Terminal}
 use crate::{DaLayerTrait, Error};
 use proj::{Coord, Proj};
 
-#[derive(Debug)]
-struct MockLocalDB {
+#[derive(Debug,Clone)]
+pub struct MockLocalDB {
     db: db::Db,
 }
 impl DaLayerTrait for MockLocalDB {
@@ -254,7 +254,7 @@ impl DaLayerTrait for MockLocalDB {
         //     err
         // })?;
         if let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg {
-            let db = db::Db::new(cfg.clone()).await?;
+            let db = db::Db::new(&cfg).await?;
             Ok(Self { db })
         } else {
             Err(crate::Error::ConfigErr(

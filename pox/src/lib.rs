@@ -14,36 +14,37 @@ use types::{
 mod math;
 use math::*;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use zkt::ZKT;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct PoDCoef<T: FixedPoint> {
     index: usize,
     coef: T,
     x: T,
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PoDTerminalResult<T: FixedPoint> {
-    terminal_address: String,
-    weight: T,
+    pub terminal_address: String,
+    pub weight: T,
     value_for_satellite: T,
     proof: (Vec<u8>, Vec<u8>),
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PoDSatelliteResult<T: FixedPoint> {
-    value: T,
-    terminal_results: Vec<PoDTerminalResult<T>>,
+    pub value: T,
+    pub terminal_results: Vec<PoDTerminalResult<T>>,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PoFTerminalResult<T: FixedPoint> {
     terminal_address: String,
     valid_packets_num: T,
     proof: MerkleProofStruct,
     invalid_packets_num: T,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PoFSatelliteResult<T: FixedPoint> {
-    value: T,
+    pub value: T,
     terminal_results: Vec<PoFTerminalResult<T>>,
 }
 #[derive(Debug, Clone)]
@@ -56,6 +57,7 @@ pub struct PoX<
     pub(crate) kernel: K,
     pub(crate) penalty: P,
     satellite: Satellite<BigInt>,
+    pod_max_value: BigInt,
 }
 use zkt::ZkTraitHalo2;
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,7 +81,10 @@ impl PoDTerminalResult<BigInt> {
     }
 }
 impl PoDSatelliteResult<BigInt> {
-    pub fn new_from_results(results: Vec<PoDTerminalResult<BigInt>>) -> PoDSatelliteResult<BigInt> {
+    pub fn new_from_results(
+        results: Vec<PoDTerminalResult<BigInt>>,
+        pod_max_value: BigInt,
+    ) -> PoDSatelliteResult<BigInt> {
         let total_value = results
             .iter()
             .map(|r| r.value_for_satellite.clone() * r.weight.clone())
@@ -92,8 +97,12 @@ impl PoDSatelliteResult<BigInt> {
                 terminal_results: results,
             };
         }
+        let mut value = Ratio::new(total_value, weight).to_integer() - pod_max_value;
+        if value.fixed_is_negative() {
+            value = BigInt::zero();
+        }
         PoDSatelliteResult {
-            value: Ratio::new(total_value, weight).to_integer(),
+            value,
             terminal_results: results,
         }
     }
@@ -208,7 +217,7 @@ impl<ZK> PoX<Quadratic<BigInt>, LinearPenalty<BigInt>, ZK>
 where
     ZK: zkt::ZkTraitHalo2<F = Fp>,
 {
-    pub fn new(satellite: Satellite<BigInt>, zkp: ZK, cfg: PoxConfig) -> Result<Self, Error> {
+    pub fn new(satellite: Satellite<BigInt>, zkp: ZK, cfg: &PoxConfig) -> Result<Self, Error> {
         let mut terminals = satellite.terminals.clone();
 
         let mut counts = HashMap::new();
@@ -234,6 +243,10 @@ where
                     cfg.rspr_precision_bigint,
                 )?,
             },
+            pod_max_value: BigInt::fixed_from_decimal(
+                cfg.pod_max_value,
+                cfg.rspr_precision_bigint,
+            )?,
         })
     }
     pub fn eval_pod(&self) -> PoDSatelliteResult<BigInt> {
@@ -317,7 +330,7 @@ where
             })
             .collect::<Vec<_>>();
         assert!(pod_result.len() == self.satellite.terminals.len());
-        PoDSatelliteResult::new_from_results(pod_result)
+        PoDSatelliteResult::new_from_results(pod_result, self.pod_max_value.clone())
     }
     pub fn eval_pof(&self) -> PoFSatelliteResult<BigInt> {
         let result = if let Some(satellite_packets) = self.satellite.satellite_packets.as_ref() {
@@ -431,6 +444,7 @@ mod tests {
             penalty: PenaltyConfig { max_diff: dec!(20) },
             rspr_precision_bigint: 4,
             cooridnate_precision_bigint: 3,
+            pod_max_value: dec!(-100),
         };
         let satellite = Satellite::<Decimal> {
             terminals: vec![
@@ -536,10 +550,11 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let sv = ss.iter().map(|(v, d)| v * d).sum::<Decimal>()
-            / ss.iter().map(|(_, d)| d).sum::<Decimal>();
+            / ss.iter().map(|(_, d)| d).sum::<Decimal>()
+            + dec!(100);
         debug!("Reference: value = {}", sv);
         let required_result = PoDSatelliteResult::<BigInt> {
-            value: BigInt::from(-615394),
+            value: BigInt::from(384606),
             terminal_results: vec![
                 PoDTerminalResult {
                     terminal_address: "0x1".to_string(),
@@ -573,7 +588,7 @@ mod tests {
                 },
             ],
         };
-        let pox = PoX::new(satellite, zk, cfg).unwrap();
+        let pox = PoX::new(satellite, zk, &cfg).unwrap();
         assert_eq!(pox.kernel.max_dis_sqr, BigInt::from(25_000_000));
         assert_eq!(pox.penalty.max_diff, BigInt::from(200_000));
         let pod_result = pox.eval_pod();
@@ -703,7 +718,7 @@ mod tests {
         let zk = TestZK {};
 
         let satellite = Satellite::from_with_config(satellite, &cfg).unwrap();
-        let pox = PoX::new(satellite, zk, cfg).unwrap();
+        let pox = PoX::new(satellite, zk, &cfg).unwrap();
         let r = pox.eval_pof();
         // debug!("{:#?}", r);
         let vr = r.verify();

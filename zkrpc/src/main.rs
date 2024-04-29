@@ -6,7 +6,7 @@ use rpc::ZkRpcServer;
 async fn main() -> Result<()> {
     let cfg = config::config::Config::new()?;
     let _guard = initialize_logger(&cfg.log);
-    let rpc_server = ZkRpcServer::new(&cfg.rpc);
+    let rpc_server = ZkRpcServer::new(&cfg).await?;
     rpc_server.start().await?;
     Ok(())
 }

@@ -12,6 +12,8 @@ pub struct PoxConfig {
 
     pub penalty: PenaltyConfig,
     pub kernel: KernelConfig,
+
+    pub pod_max_value: Decimal,
 }
 impl Default for PoxConfig {
     fn default() -> Self {
@@ -31,6 +33,7 @@ impl Default for PoxConfig {
                     max_dis_sqr: dec!(10000),
                 },
             },
+            pod_max_value: dec!(-100),
         }
     }
 }

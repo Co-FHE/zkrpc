@@ -19,3 +19,4 @@ halo2curves = "0.6.1"
 zkt = { path = "../zkt" }
 flat_projection = "0.4.0"
 rs_merkle = "1.4.2"
+serde = "1.0.199"

@@ -1,8 +1,8 @@
 log:
   log_dir: logs
   log_level: trace
-  show_file_path: false
-  show_line_number: false
+  show_file_path: true
+  show_line_number: true
   show_with_target: true
   write_to_file: false
   rotation: daily
@@ -18,5 +18,15 @@ da_layer: !MockDaLayerConfig
 pox:
   cooridnate_precision_bigint: 3
   rspr_precision_bigint: 4
-  sigma_range: '3.0'
-  sigma: '40000'
+  penalty:
+    max_diff: '10'
+  kernel:
+    gaussian:
+      sigma: '40000'
+      vanilla:
+        use_coef: false
+      tylor:
+        sigma_range: '3.0'
+    quadratic:
+      max_dis_sqr: '10000'
+  pod_max_value: '-100'

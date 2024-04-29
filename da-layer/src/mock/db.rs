@@ -12,11 +12,10 @@ use super::terminal_track;
 
 #[derive(Clone, Debug)]
 pub struct Db {
-    config: MySQLConfig,
     db: sea_orm::DatabaseConnection,
 }
 impl Db {
-    pub async fn new(config: MySQLConfig) -> Result<Self, Error> {
+    pub async fn new(config: &MySQLConfig) -> Result<Self, Error> {
         info!(
             "Connecting to MySQL database at mysql://{user}@{host}:{port}/{db}",
             user = config.user,
@@ -33,7 +32,7 @@ impl Db {
                 )
             })?;
 
-        Ok(Self { config, db })
+        Ok(Self { db })
     }
 }
 
@@ -149,12 +148,8 @@ mod tests {
     async fn test_db() {
         let _guard = init_logger_for_test!();
         let cfg = config::config::Config::new().unwrap();
-        let _ = Db::new({
-            let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-            cfg
-        })
-        .await
-        .unwrap();
+        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let _ = Db::new(&cfg).await.unwrap();
     }
     #[tokio::test]
     // #[cfg(exclude)]
@@ -162,12 +157,8 @@ mod tests {
         let _guard = init_logger_for_test!();
 
         let cfg = config::config::Config::new().unwrap();
-        let db = Db::new({
-            let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-            cfg
-        })
-        .await
-        .unwrap();
+        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let db = Db::new(&cfg).await.unwrap();
         let result = db
             .find_all_satellite_track_with_single_satellite_block_from_to(
                 "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
@@ -184,12 +175,8 @@ mod tests {
         let _guard = init_logger_for_test!();
 
         let cfg = config::config::Config::new().unwrap();
-        let db = Db::new({
-            let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-            cfg
-        })
-        .await
-        .unwrap();
+        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let db = Db::new(&cfg).await.unwrap();
         let result = db
             .find_all_terminal_track_with_single_satellite_block_from_to(
                 "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
@@ -206,12 +193,8 @@ mod tests {
         let _guard = init_logger_for_test!();
 
         let cfg = config::config::Config::new().unwrap();
-        let db = Db::new({
-            let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-            cfg
-        })
-        .await
-        .unwrap();
+        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let db = Db::new(&cfg).await.unwrap();
         let result = db
             .find_all_ip_packets_with_single_satellite_block_from_to(
                 "6C:AC:B2:55:09:A5",

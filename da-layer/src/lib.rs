@@ -8,7 +8,7 @@ use types::{FixedPoint, Satellite, Terminal};
 mod error;
 use error::*;
 mod mock;
-use mock::*;
+pub use mock::*;
 
 pub trait DaLayerTrait {
     fn new(cfg: &config::config::DaLayerConfig) -> impl Future<Output = Result<Self, error::Error>>

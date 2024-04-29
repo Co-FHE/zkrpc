@@ -1,9 +1,10 @@
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleProof, MerkleTree};
+use serde::{Deserialize, Serialize};
 use tracing::{debug, error, field::debug};
 
 use crate::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MerkleProofStruct {
     pub reference_merkle_tree_root: [u8; 32],
     pub dropped_merkle_tree_root: [u8; 32],

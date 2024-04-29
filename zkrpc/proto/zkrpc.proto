@@ -5,32 +5,35 @@ package grpc.zkrpc.service;
 message ZkGenProofRequest {
   string proverAddress = 1;
   string satelliteAddress = 2;
-  int64 epochForProof = 3;
-  int64 blockHeightFromForProof = 4;
-  int64 blockHeightToForProof = 5;
+  uint64 epochForProof = 3;
+  uint64 blockHeightFromForProof = 4;
+  uint64 blockHeightToForProof = 5;
 }
 
 message ZkWeight{
-  int64 alphaWeight = 1;
-  int64 betaWeight = 2;
+  string address = 1;
+  uint64 alphaWeight = 2;
+  uint64 betaWeight = 3;
 }
 
 message ZkGenProofResponse {
   string alphaProofMerkleRoot = 1;
   string betaProofMerkleRoot = 2;
   // hashmap of terminal address and its weight
-  map<string, ZkWeight> terminalWeights = 3;
+  uint64 satelliteAlphaWeight = 3;
+  uint64 satelliteBetaWeight = 4;
+  repeated ZkWeight terminalWeights = 8;
+  // map<string, ZkWeight> terminalWeights = 5;
 }
 
 message ZkVerifyProofRequest {
   string proverAddress = 1;
   string satelliteAddress = 2;
-  int64 epochForProof = 3;
-  int64 blockHeightFromForProof = 4;
-  int64 blockHeightToForProof = 5;
+  uint64 epochForProof = 3;
+  uint64 blockHeightFromForProof = 4;
+  uint64 blockHeightToForProof = 5;
   string alphaProofMerkleRoot = 6;
   string betaProofMerkleRoot = 7;
-  map<string, ZkWeight> terminalWeights = 8;
   
 }
 
