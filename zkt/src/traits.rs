@@ -31,6 +31,7 @@ pub trait ZkTraitHalo2: std::marker::Sync {
         // TODO: add other parameters
         // e.g. setup parameters
     ) -> Result<(Vec<u8>, Vec<u8>), Error>;
+
     // TODO: add verify_proof function
     // TODO: add setup function
 

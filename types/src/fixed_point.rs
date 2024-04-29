@@ -1,4 +1,7 @@
-use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::{
+    ops::{Add, Div, Mul, Rem, Sub},
+    str::FromStr,
+};
 
 use halo2_proofs::arithmetic::Field;
 use halo2curves::pasta::{Fp, Fq};
@@ -41,6 +44,7 @@ pub trait FixedPoint:
 pub trait FixedPointInteger: FixedPoint {
     fn to_fp(&self) -> Result<Fp, Error>;
     fn fixed_from_f64(value: f64, multiplier: &Self) -> Result<Self, Error>;
+    fn fixed_from_decimal(value: Decimal, exp: u32) -> Result<Self, Error>;
 }
 pub trait FixedPointDecimal: FixedPoint {
     fn fixed_from_f64(value: f64) -> Result<Self, Error>;
@@ -125,7 +129,7 @@ impl FixedPointInteger for BigInt {
             error!("{:?}", e);
             e
         })? * multiplier;
-        return Ok(r.round().to_integer());
+        return Ok(r.to_integer());
     }
 
     fn to_fp(&self) -> Result<Fp, Error> {
@@ -137,6 +141,22 @@ impl FixedPointInteger for BigInt {
         }
         bytes.resize(4, 0);
         Ok(Fp::from_raw([bytes[0], bytes[1], bytes[2], bytes[3]]))
+    }
+
+    fn fixed_from_decimal(value: Decimal, exp: u32) -> Result<Self, Error> {
+        // TODO: use shift_left instead of powi
+        let multiplier = Decimal::from(10).powi(exp as i64);
+        let multiplied_decimal = value.checked_mul(multiplier).ok_or({
+            let e = Error::DecimalErr(value, exp);
+            error!("{:?}", e);
+            e
+        })?;
+        let as_bigint = BigInt::from_str(&multiplied_decimal.to_string()).map_err(|e| {
+            let e = Error::BigIntConversionErr(e.to_string());
+            error!("{:?}", e);
+            e
+        })?;
+        Ok(as_bigint)
     }
 }
 

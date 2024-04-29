@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -14,4 +15,8 @@ pub enum Error {
     ZeroKnownledgeProofErr(String),
     #[error("Error conversion from BigInt: {0}")]
     BigIntConversionErr(String),
+    #[error("Error conversion from Decimal: {0}, Exp: {1}")]
+    DecimalErr(Decimal, u32),
+    #[error("Merkle tree error: {0}")]
+    MerkleTreeErr(String),
 }

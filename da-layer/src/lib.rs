@@ -2,8 +2,8 @@
 
 use num_bigint::BigInt;
 use rust_decimal::Decimal;
-use std::future::Future;
 use std::pin::Pin;
+use std::{collections::HashMap, future::Future};
 use types::{FixedPoint, Satellite, Terminal};
 mod error;
 use error::*;
@@ -19,5 +19,5 @@ pub trait DaLayerTrait {
         satellite_address: &str,
         block_height_from: u64,
         block_height_to: u64,
-    ) -> impl std::future::Future<Output = Result<Satellite<Decimal>, Error>>;
+    ) -> impl std::future::Future<Output = Result<Vec<(usize, Satellite<Decimal>)>, Error>>;
 }
