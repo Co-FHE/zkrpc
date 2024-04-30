@@ -81,6 +81,13 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             .map_err(|e| Status::internal(format!("Error serializing PoD: {}", e.to_string())))?;
         info!("{:?}", pod.value);
         info!("{:?}", pof.value);
+        let mut pof_hashmap = HashMap::new();
+        pof.terminal_results.iter().for_each(|t| {
+            pof_hashmap.insert(
+                t.terminal_address.clone(),
+                t.invalid_packets_num.clone() + t.valid_packets_num.clone(),
+            );
+        });
         let response = ZkGenProofResponse {
             alpha_proof_merkle_root: hex::encode(pod_s),
             beta_proof_merkle_root: hex::encode(pof_s),
@@ -108,7 +115,18 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
                                 e.to_string()
                             ))
                         })?,
-                        beta_weight: 0,
+                        beta_weight: {
+                            let r = pof_hashmap.get(&t.terminal_address);
+                            match r {
+                                Some(v) => v.to_string().parse::<u64>().map_err(|e| {
+                                    Status::internal(format!(
+                                        "Error parsing terminal beta_weight: {}",
+                                        e.to_string()
+                                    ))
+                                })?,
+                                None => 0,
+                            }
+                        },
                     })
                 })
                 .collect::<Result<Vec<_>, Status>>()?,

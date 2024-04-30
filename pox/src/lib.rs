@@ -37,15 +37,15 @@ pub struct PoDSatelliteResult<T: FixedPoint> {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PoFTerminalResult<T: FixedPoint> {
-    terminal_address: String,
-    valid_packets_num: T,
+    pub terminal_address: String,
+    pub valid_packets_num: T,
     proof: MerkleProofStruct,
-    invalid_packets_num: T,
+    pub invalid_packets_num: T,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PoFSatelliteResult<T: FixedPoint> {
     pub value: T,
-    terminal_results: Vec<PoFTerminalResult<T>>,
+    pub terminal_results: Vec<PoFTerminalResult<T>>,
 }
 #[derive(Debug, Clone)]
 pub struct PoX<
