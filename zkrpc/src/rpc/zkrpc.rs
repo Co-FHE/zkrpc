@@ -1,10 +1,13 @@
 pub mod pb {
     tonic::include_proto!("grpc.zkrpc.service");
 }
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Write};
 
 use config::config::{Config, DaLayerConfig, RpcConfig};
 use da_layer::{DaLayerTrait, MockLocalDB};
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
+use flate2::{read, read::ZlibDecoder, write};
 use halo2_proofs::pasta::Fp;
 use num_bigint::BigInt;
 use pb::*;
@@ -58,12 +61,34 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             .map_err(|e| Status::internal(format!("Error creating PoX: {}", e.to_string())))?;
         let pod = pox.eval_pod();
         let pof = pox.eval_pof();
-        let pod_s = bincode::serialize(&pod)
+        let before_compress_pof = bincode::serialize(&pof)
+            .map_err(|e| Status::internal(format!("Error serializing PoF: {}", e.to_string())))?;
+        let before_compress_pod = bincode::serialize(&pod)
             .map_err(|e| Status::internal(format!("Error serializing PoD: {}", e.to_string())))?;
-        let pof_s = bincode::serialize(&pof)
+
+        let mut pod_encoder = ZlibEncoder::new(Vec::new(), Compression::best());
+        let mut pof_encoder = ZlibEncoder::new(Vec::new(), Compression::best());
+        bincode::serialize_into(&mut pod_encoder, &pod)
             .map_err(|e| Status::internal(format!("Error serializing PoD: {}", e.to_string())))?;
+        bincode::serialize_into(&mut pof_encoder, &pof)
+            .map_err(|e| Status::internal(format!("Error serializing PoD: {}", e.to_string())))?;
+
+        let pod_s = pod_encoder
+            .finish()
+            .map_err(|e| Status::internal(format!("Error Compress PoD: {}", e.to_string())))?;
+        let pof_s = pof_encoder
+            .finish()
+            .map_err(|e| Status::internal(format!("Error Compress PoF: {}", e.to_string())))?;
+        info!(
+            "PoD compress : {:?} => {:?} PoF compress {:?} => {:?}",
+            before_compress_pod.len(),
+            pod_s.len(),
+            before_compress_pof.len(),
+            pof_s.len(),
+        );
         info!("{:?}", pod.value);
         info!("{:?}", pof.value);
+
         let mut pof_hashmap = HashMap::new();
         pof.terminal_results.iter().for_each(|t| {
             pof_hashmap.insert(
@@ -134,12 +159,15 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
                 e.to_string()
             ))
         })?;
-        let pod: pox::PoDSatelliteResult<BigInt> = bincode::deserialize(&pod_s)
+        let pod_s = ZlibDecoder::new(&pod_s[..]);
+        let pof_s = ZlibDecoder::new(&pof_s[..]);
+
+        let pod: pox::PoDSatelliteResult<BigInt> = bincode::deserialize_from(pod_s)
             .map_err(|e| Status::internal(format!("Error deserializing PoD: {}", e.to_string())))?;
         if !pod.verify() {
             return Ok(Response::new(ZkVerifyProofResponse { is_valid: false }));
         }
-        let pof: pox::PoFSatelliteResult<BigInt> = bincode::deserialize(&pof_s)
+        let pof: pox::PoFSatelliteResult<BigInt> = bincode::deserialize_from(pof_s)
             .map_err(|e| Status::internal(format!("Error deserializing PoF: {}", e.to_string())))?;
         let verf = pof.verify();
         let pof_verf = verf.iter().all(|x| *x == pox::PoFVerify::Success);

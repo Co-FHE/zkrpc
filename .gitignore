@@ -16,7 +16,7 @@
 .vscode/
 *.swp
 *.swo
-.space-test
+.space-*
 
 Cargo.lock
 **/.DS_Store

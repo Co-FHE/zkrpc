@@ -43,10 +43,12 @@ async fn main() -> Result<()> {
             let mut cfg = config::config::Config::new()?;
             cfg.log.log_level = LogLevel::Info;
             let _guard = initialize_logger(&cfg.log);
-            let mut client =
-                ZkServiceClient::connect(format!("http://127.0.0.1:{}", cfg.rpc.rpc_port))
-                    .await
-                    .unwrap();
+            let mut client = ZkServiceClient::connect(format!(
+                "http://{}:{}",
+                cfg.rpc.client_host, cfg.rpc.rpc_port
+            ))
+            .await
+            .unwrap();
             let mut start = 200000;
             loop {
                 info!("start: {:?}", start);
