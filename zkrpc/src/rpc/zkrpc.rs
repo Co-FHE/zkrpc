@@ -1,8 +1,7 @@
 pub mod pb {
     tonic::include_proto!("grpc.zkrpc.service");
 }
-use std::{collections::HashMap, io::Write};
-
+use brotli::{CompressorReader, DecompressorWriter};
 use config::config::{Config, DaLayerConfig, RpcConfig};
 use da_layer::{DaLayerTrait, MockLocalDB};
 use flate2::write::ZlibEncoder;
@@ -11,6 +10,8 @@ use flate2::{read, read::ZlibDecoder, write};
 use halo2_proofs::pasta::Fp;
 use num_bigint::BigInt;
 use pb::*;
+use std::io::Read;
+use std::{collections::HashMap, io::Write};
 use tonic::{transport::Server, Request, Response, Status};
 use tracing::{debug, error, info};
 use types::{EndPointFrom, Satellite};
@@ -21,6 +22,20 @@ pub struct ZkRpcServer {
     pub db: MockLocalDB,
     pub cfg: Config,
 }
+fn compress_with_brotli(input: &Vec<u8>) -> Vec<u8> {
+    let mut compressed = Vec::new();
+    let mut compressor = brotli::CompressorReader::new(&input[..], 4096, 11, 21);
+    compressor.read_to_end(&mut compressed).unwrap();
+    compressed
+}
+
+fn decompress_with_brotli(input: &Vec<u8>) -> Vec<u8> {
+    let mut decompressed = Vec::new();
+    let mut decompressor = brotli::Decompressor::new(&input[..], 4096);
+    decompressor.read_to_end(&mut decompressed).unwrap();
+    decompressed
+}
+
 #[tonic::async_trait]
 impl pb::zk_service_server::ZkService for ZkRpcServer {
     async fn gen_proof(
@@ -65,7 +80,18 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             .map_err(|e| Status::internal(format!("Error serializing PoF: {}", e.to_string())))?;
         let before_compress_pod = bincode::serialize(&pod)
             .map_err(|e| Status::internal(format!("Error serializing PoD: {}", e.to_string())))?;
-
+        let after_brotli_pof = compress_with_brotli(&before_compress_pof);
+        let after_brotli_pod = compress_with_brotli(&before_compress_pod);
+        info!(
+            "Brotli PoD compress : {:?} => {:?}",
+            before_compress_pod.len(),
+            after_brotli_pod.len(),
+        );
+        info!(
+            "Brotli PoF compress {:?} => {:?}",
+            before_compress_pof.len(),
+            after_brotli_pof.len(),
+        );
         let mut pod_encoder = ZlibEncoder::new(Vec::new(), Compression::best());
         let mut pof_encoder = ZlibEncoder::new(Vec::new(), Compression::best());
         bincode::serialize_into(&mut pod_encoder, &pod)
@@ -80,9 +106,12 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             .finish()
             .map_err(|e| Status::internal(format!("Error Compress PoF: {}", e.to_string())))?;
         info!(
-            "PoD compress : {:?} => {:?} PoF compress {:?} => {:?}",
+            "flate2 PoD compress : {:?} => {:?}",
             before_compress_pod.len(),
             pod_s.len(),
+        );
+        info!(
+            "flate2 PoF compress {:?} => {:?}",
             before_compress_pof.len(),
             pof_s.len(),
         );
