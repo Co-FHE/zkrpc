@@ -9,7 +9,7 @@ use halo2_proofs::pasta::Fp;
 use num_bigint::BigInt;
 use pb::*;
 use tonic::{transport::Server, Request, Response, Status};
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 use types::{EndPointFrom, Satellite};
 use zkt::{ZkTraitHalo2, ZKT};
 #[derive(Debug, Clone)]
@@ -159,8 +159,9 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         let pof: pox::PoFSatelliteResult<BigInt> = bincode::deserialize(&pof_s)
             .map_err(|e| Status::internal(format!("Error deserializing PoF: {}", e.to_string())))?;
         let pof_verf = pof.verify();
-        pof_verf.iter().for_each(|r| {
-            info!("{:?}", r);
+        pof_verf.iter().for_each(|r| match r {
+            pox::PoFVerify::Success => info!("{:?}", r),
+            pox::PoFVerify::Fail(f) => error!("{:?}", f),
         });
 
         let response = ZkVerifyProofResponse { is_valid: true };

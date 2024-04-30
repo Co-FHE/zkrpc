@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Commands::Server => {
             let mut cfg = config::config::Config::new()?;
-            cfg.log.log_level = LogLevel::Trace;
+            cfg.log.log_level = LogLevel::Info;
             let _guard = initialize_logger(&cfg.log);
             let rpc_server = ZkRpcServer::new(&cfg).await?;
             rpc_server.start().await?;
