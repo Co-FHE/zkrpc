@@ -1,6 +1,6 @@
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleProof, MerkleTree};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, field::debug};
+use tracing::{debug, error, field::debug, info};
 
 use crate::Error;
 
@@ -11,6 +11,7 @@ pub struct MerkleProofStruct {
     pub proof: Vec<u8>,
     pub indices_to_prove: Vec<usize>,
     pub leaves_to_prove: Vec<[u8; 32]>,
+    pub total_leaves_count: usize,
 }
 pub trait MerkleAble {
     fn merkle_tree(&self) -> Result<MerkleTree<Sha256>, Error>;
@@ -47,6 +48,7 @@ impl MerkleComparison for MerkleTree<Sha256> {
             .into_iter()
             .map(|i| self.leaves().unwrap()[i])
             .collect::<Vec<_>>();
+        // debug!("binding {:?}", binding);
         let merkle_proof = self.proof(&diff);
         let merkle_root = self.root().ok_or_else(|| {
             error!("Couldn't get the Root of the merkle tree reference");
@@ -58,13 +60,17 @@ impl MerkleComparison for MerkleTree<Sha256> {
             error!("Couldn't get the root of the merkle tree dropped");
             Error::MerkleTreeErr(format!("Couldn't get the root of the merkle tree dropped"))
         })?;
-        Ok(MerkleProofStruct {
+        let proof = MerkleProofStruct {
             reference_merkle_tree_root: merkle_root,
             dropped_merkle_tree_root: dropped_merkle_root,
             proof: merkle_proof.to_bytes(),
             indices_to_prove: diff,
             leaves_to_prove: binding,
-        })
+            total_leaves_count: self.leaves_len(),
+        };
+        // info!("proof struct {:?}", proof);
+        assert!(proof.verify());
+        Ok(proof)
     }
 }
 impl MerkleProofStruct {
@@ -75,16 +81,31 @@ impl MerkleProofStruct {
             proof: vec![],
             indices_to_prove: vec![],
             leaves_to_prove: vec![],
+            total_leaves_count: 0,
         }
     }
     pub fn verify(&self) -> bool {
+        if self.leaves_to_prove.len() != self.indices_to_prove.len() {
+            error!("leaves length not match");
+            return false;
+        }
+        if self.indices_to_prove.len() == 0 {
+            return true;
+        }
         let proof = MerkleProof::<Sha256>::try_from(self.proof.as_slice()).unwrap();
         if !proof.verify(
             self.reference_merkle_tree_root,
             &self.indices_to_prove,
             self.leaves_to_prove.as_slice(),
-            self.indices_to_prove.len(),
+            self.total_leaves_count,
         ) {
+            error!(
+                "reference merkle error, {:?},{:?},{:?},{:?}",
+                self.reference_merkle_tree_root,
+                &self.indices_to_prove,
+                self.leaves_to_prove.as_slice(),
+                self.indices_to_prove.len(),
+            );
             return false;
         }
         let dropped_leaves = self
@@ -92,23 +113,37 @@ impl MerkleProofStruct {
             .iter()
             .map(|_| Sha256::hash(b""))
             .collect::<Vec<_>>();
+
         proof.verify(
             self.dropped_merkle_tree_root,
             &self.indices_to_prove,
             dropped_leaves.as_slice(),
-            self.indices_to_prove.len(),
+            self.total_leaves_count,
         )
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use config::config::LogConfig;
+    use logger::init_logger_for_test;
     use rs_merkle::algorithms::Sha256;
     use rs_merkle::{Hasher, MerkleProof, MerkleTree};
 
     #[test]
     fn test_compare_merkle_tree() {
+        let _guard = init_logger_for_test!();
         let leaves1 = vec![
+            Sha256::hash(b"1"),
+            Sha256::hash(b"2"),
+            Sha256::hash(b"3"),
+            Sha256::hash(b"4"),
+            Sha256::hash(b"2"),
+            Sha256::hash(b"1"),
+            Sha256::hash(b"2"),
+            Sha256::hash(b"3"),
+            Sha256::hash(b"4"),
+            Sha256::hash(b"2"),
             Sha256::hash(b"1"),
             Sha256::hash(b"2"),
             Sha256::hash(b"3"),
@@ -117,15 +152,38 @@ mod tests {
         ];
         let leaves2 = vec![
             Sha256::hash(b"1"),
-            Sha256::hash(b"3"),
-            Sha256::hash(b"5"),
+            Sha256::hash(b""),
+            Sha256::hash(b""),
+            Sha256::hash(b"4"),
+            Sha256::hash(b"2"),
+            Sha256::hash(b"1"),
+            Sha256::hash(b""),
+            Sha256::hash(b""),
+            Sha256::hash(b"4"),
+            Sha256::hash(b"2"),
+            Sha256::hash(b"1"),
+            Sha256::hash(b""),
+            Sha256::hash(b""),
             Sha256::hash(b"4"),
             Sha256::hash(b"2"),
         ];
         let merkle_tree1 = MerkleTree::<Sha256>::from_leaves(&leaves1);
         let merkle_tree2 = MerkleTree::<Sha256>::from_leaves(&leaves2);
         let diff = merkle_tree1.compare(&merkle_tree2).unwrap();
-        assert_eq!(diff, vec![1, 2]);
+        // let leaves = vec![
+        //     leaves1[1],
+        //     leaves1[2],
+        //     leaves1[6],
+        //     leaves1[7],
+        //     leaves1[11],
+        //     leaves1[12],
+        // ];
+        assert_eq!(diff, vec![1, 2, 6, 7, 11, 12]);
+        // let out_proof = merkle_tree1.proof(&diff).to_bytes();
+        // let proof: MerkleProof<Sha256> = MerkleProof::try_from(out_proof.as_slice()).unwrap();
+        // let ttt = proof.verify(merkle_tree1.root().unwrap(), &diff, &leaves, leaves1.len());
+        // info!("ttt {}", ttt);
+        let _ = merkle_tree1.comparison_proof(&merkle_tree2);
     }
     #[test]
     fn test_proof() {

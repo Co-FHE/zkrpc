@@ -52,24 +52,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         let satellite = Satellite::from_with_config(satellite, &self.cfg.pox).map_err(|e| {
             Status::internal(format!("Error converting Satellite: {}", e.to_string()))
         })?;
-        struct TestZK {}
-        impl ZkTraitHalo2 for TestZK {
-            type F = Fp;
-            fn gen_proof(
-                &self,
-                _coefs: Vec<Fp>,
-                _x: Vec<Fp>,
-            ) -> Result<(Vec<u8>, Vec<u8>), zkt::traits::Error> {
-                Ok((Vec::new(), Vec::new()))
-            }
-
-            fn verify_proof(_out: Vec<u8>, _proof: Vec<u8>) -> bool {
-                true
-            }
-
-            fn setup() {}
-        }
-        let zkp = TestZK {};
+        let zkp = ZKT {};
 
         let pox = pox::PoX::new(satellite, zkp, &self.cfg.pox)
             .map_err(|e| Status::internal(format!("Error creating PoX: {}", e.to_string())))?;
@@ -158,13 +141,14 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         }
         let pof: pox::PoFSatelliteResult<BigInt> = bincode::deserialize(&pof_s)
             .map_err(|e| Status::internal(format!("Error deserializing PoF: {}", e.to_string())))?;
-        let pof_verf = pof.verify();
-        pof_verf.iter().for_each(|r| match r {
+        let verf = pof.verify();
+        let pof_verf = verf.iter().all(|x| *x == pox::PoFVerify::Success);
+        verf.iter().for_each(|r| match r {
             pox::PoFVerify::Success => info!("{:?}", r),
             pox::PoFVerify::Fail(f) => error!("{:?}", f),
         });
 
-        let response = ZkVerifyProofResponse { is_valid: true };
+        let response = ZkVerifyProofResponse { is_valid: pof_verf };
         Ok(Response::new(response))
     }
 }

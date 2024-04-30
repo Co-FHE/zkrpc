@@ -20,18 +20,18 @@ pub struct Model {
     pub satellite_validator_address: String,
     #[sea_orm(primary_key)]
     pub id: i64,
-    #[sea_orm(column_type = "Float", nullable)]
-    pub latitude: Option<f32>,
-    #[sea_orm(column_type = "Float", nullable)]
-    pub longitude: Option<f32>,
+    #[sea_orm(column_type = "Float")]
+    pub latitude: f32,
+    #[sea_orm(column_type = "Float")]
+    pub longitude: f32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
         belongs_to = "super::terminal::Entity",
-        from = "Column::TerminalAddress",
-        to = "super::terminal::Column::Address",
+        from = "Column::TerminalMac",
+        to = "super::terminal::Column::Mac",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]

@@ -239,7 +239,7 @@ pub fn gen_proof(coefs: Vec<Fp>, xs: Vec<Fp>) -> Result<(Vec<u8>, Vec<u8>), trai
     // ANCHOR: test-circuit
     // The number of rows in our circuit cannot exceed 2^k. Since our example
     // circuit is very small, we can pick a very small value here.
-    let k = 5;
+    let k = 7;
 
     // Prepare the private and public inputs to the circuit!
     use std::iter::zip;

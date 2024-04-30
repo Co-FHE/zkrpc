@@ -1,3 +1,9 @@
+target
+Dockerfile
+.dockerignore
+.git
+.gitignore
+
 **/target/
 **/*.rs.bk
 
@@ -23,4 +29,3 @@ Cargo.lock
 
 .VSCodeCounter
 test.sh
-**/config.example.yaml

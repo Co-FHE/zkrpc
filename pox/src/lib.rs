@@ -7,6 +7,7 @@ use num_rational::Ratio;
 use rs_merkle::{algorithms::Sha256, Hasher, MerkleProof};
 use rust_decimal::prelude::Zero;
 use tracing::{debug, warn};
+use tracing::{error, info};
 use types::{
     Alpha, Error, FixedPoint, FixedPointInteger, GetPos2D, MerkleAble, MerkleComparison,
     MerkleProofStruct, Pos2D, Satellite,
@@ -178,7 +179,7 @@ impl PoFSatelliteResult<BigInt> {
                             r.proof.reference_merkle_tree_root,
                             &r.proof.indices_to_prove,
                             r.proof.leaves_to_prove.as_slice(),
-                            r.proof.indices_to_prove.len(),
+                            r.proof.total_leaves_count,
                         ) {
                             return PoFVerify::Fail(format!(
                                 "Reference Merkle tree verify failed for terminal {}",
@@ -194,7 +195,7 @@ impl PoFSatelliteResult<BigInt> {
                                 .map(|_| Sha256::hash(vec![].as_slice()))
                                 .collect::<Vec<_>>()
                                 .as_slice(),
-                            r.proof.indices_to_prove.len(),
+                                r.proof.total_leaves_count,
                         ) {
                             return PoFVerify::Fail(format!(
                                 "Dropped Merkle tree verify failed for terminal {}",
@@ -310,7 +311,7 @@ where
                     //     "PoD: address: {}, weight: {}, value: {}, binding: {}, diff: {}",
                     //     address, weight, value, binding, diff
                     // );
-
+                    info!(coefs_len = coefs.len(), xs_len = xs.len(), "zk input len");
                     let zkr = self
                         .zk_prover
                         .gen_proof(coefs, xs)

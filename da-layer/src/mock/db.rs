@@ -63,13 +63,13 @@ impl Db {
         satellite_address: &str,
         block_height_from: u64,
         block_height_to: u64,
-    ) -> Result<Vec<(terminal_track::Model, terminal::Model)>, Error> {
+    ) -> Result<Vec<terminal_track::Model>, Error> {
         let terminals = TerminalTrack::find()
             .filter(terminal_track::Column::BlockNumber.lte(block_height_to))
             .filter(terminal_track::Column::BlockNumber.gte(block_height_from))
             .filter(terminal_track::Column::SatelliteValidatorAddress.eq(satellite_address))
             // .inner_join(terminal::Entity)
-            .find_also_related(Terminal)
+            // .find_also_related(Terminal)
             // .join(
             //     JoinType::InnerJoin,
             //     terminal_track::Entity::belongs_to(terminal::Entity)
@@ -87,19 +87,6 @@ impl Db {
                 )
             })?
             .into_iter()
-            .filter_map(|(tt, t)| match t {
-                Some(t) => {
-                    assert!(tt.terminal_address == t.address);
-                    Some((tt, t))
-                }
-                None => {
-                    warn!(
-                        "address {} in terminal_track not found in table track",
-                        tt.terminal_address
-                    );
-                    None
-                }
-            })
             .collect();
 
         Ok(terminals)

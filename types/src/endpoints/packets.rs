@@ -35,7 +35,6 @@ impl MerkleAble for CompletePackets {
             .iter()
             .map(|x| Sha256::hash(x.data.as_slice()))
             .collect::<Vec<_>>();
-        print!("{:?}", leaves);
         Ok(MerkleTree::<Sha256>::from_leaves(&leaves))
     }
 }

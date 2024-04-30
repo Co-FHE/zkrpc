@@ -59,14 +59,13 @@ impl DaLayerTrait for MockLocalDB {
             )
             .await?
             .into_iter()
-            .fold(HashMap::new(), |mut acc, (terminal_track, terminal)| {
-                assert!(terminal.address == terminal_track.terminal_address);
+            .fold(HashMap::new(), |mut acc, terminal_track| {
                 acc.entry((
                     terminal_track.block_number as u64,
                     terminal_track.satellite_validator_address.to_owned(),
                 ))
                 .or_insert_with(Vec::new)
-                .push((terminal_track, terminal));
+                .push(terminal_track);
                 acc
             });
         let satellite_packets = self
@@ -156,15 +155,14 @@ impl DaLayerTrait for MockLocalDB {
                     .map_or(Vec::new(), |terminals| {
                         let terminals = terminals
                             .iter()
-                            .filter_map(|(terminal_track, terminal)| {
+                            .filter_map(|terminal_track| {
                                 assert!(
                                     terminal_track.block_number as u64 == blocknum_saddress.0
                                         && terminal_track.satellite_validator_address
                                             == blocknum_saddress.1
-                                        && terminal.address == terminal_track.terminal_address
                                 );
                                 let pos = proj
-                                    .project(terminal.longitude as f64, terminal.latitude as f64);
+                                    .project(terminal_track.longitude as f64, terminal_track.latitude as f64);
                                 // let pos = Pos2D::<Decimal>::new_from_flat_point_f64(pos)
                                 //     .map_err(|e| {
                                 //         let err = crate::Error::TypesError(e);
