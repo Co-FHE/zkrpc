@@ -276,8 +276,8 @@ pub fn gen_proof(coefs: Vec<Fp>, xs: Vec<Fp>) -> Result<(Vec<u8>, Vec<u8>), trai
     .expect("proof generation should not fail");
     let proof: Vec<u8> = transcript.finalize();
 
-    std::fs::write("./tests/plonk_api_proof.bin", &proof[..])
-        .expect("should succeed to write new proof");
+    // std::fs::write("./tests/plonk_api_proof.bin", &proof[..])
+    // .expect("should succeed to write new proof");
 
     // Check that a hardcoded proof is satisfied
     // let proof = std::fs::read("./tests/plonk_api_proof.bin").expect("should succeed to read proof");
@@ -332,17 +332,20 @@ mod tests {
         // ANCHOR: test-circuit
         // The number of rows in our circuit cannot exceed 2^k. Since our example
         // circuit is very small, we can pick a very small value here.
-        let k = 5;
+        let k = 13;
+        const LEN: u64 = 1000;
 
         // Prepare the private and public inputs to the circuit!
-        let x1 = Fp::from(10);
-        let x2 = Fp::from(12);
-        let x3 = Fp::from(13);
-        let coefs = vec![x1, x2, x3];
-        let a = Fp::from(1);
-        let b = Fp::from(2);
-        let c = Fp::from(3);
-        let xs = vec![a, b, c];
+        let coefs: Vec<_> = (1..LEN).map(Fp::from).collect();
+        let xs: Vec<_> = (1..LEN).map(Fp::from).collect();
+        // let x1 = Fp::from(10);
+        // let x2 = Fp::from(12);
+        // let x3 = Fp::from(13);
+        // let coefs = vec![x1, x2, x3];
+        // let a = Fp::from(1);
+        // let b = Fp::from(2);
+        // let c = Fp::from(3);
+        // let xs = vec![a, b, c];
 
         let sum: Fp = zip(coefs.clone(), xs.clone())
             .map(|(coef, x)| coef * x)
