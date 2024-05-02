@@ -1,4 +1,5 @@
 log:
+  format: OneLine
   log_dir: logs
   log_level: trace
   show_source_location: true

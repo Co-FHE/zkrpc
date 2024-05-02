@@ -15,17 +15,7 @@ mod test_client {
     fn test_zg() {}
     #[test]
     fn test_zk_rpc() {
-        let _guard = initialize_logger(&config::LogConfig {
-            log_level: config::LogLevel::Info,
-            write_to_file: false,
-            show_source_location: false,
-            show_thread_ids: false,
-            show_thread_names: false,
-            show_with_target: false,
-            show_span_duration: false,
-            log_dir: PathBuf::new(),
-            rotation: config::LogRotation::Never,
-        });
+        let _guard = initialize_logger(&config::LogConfig::default());
         let rt = Runtime::new().unwrap();
 
         rt.block_on(async {

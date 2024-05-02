@@ -10,6 +10,7 @@ use halo2_proofs::pasta::Fp;
 use num_bigint::BigInt;
 use pb::*;
 use pox::{PoDSatelliteResult, PoFSatelliteResult};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::Read;
 use std::{collections::HashMap, io::Write};
 use tonic::{transport::Server, Request, Response, Status};
@@ -166,8 +167,14 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         let epoch_for_proof = zk_request.epoch_for_proof;
         let block_height_from_for_proof = zk_request.block_height_from_for_proof;
         let block_height_to_for_proof = zk_request.block_height_to_for_proof;
+        let mut hasher = DefaultHasher::new();
+        zk_request.alpha_proof_merkle_root.hash(&mut hasher);
+        let alpha_root_hash = hasher.finish();
+        let mut hasher = DefaultHasher::new();
+        zk_request.beta_proof_merkle_root.hash(&mut hasher);
+        let beta_root_hash = hasher.finish();
         async move {
-            info!(message = "Received zk verification request", ?zk_request);
+            info!(message = "Received zk verification request");
             let pod_s = hex::decode(zk_request.alpha_proof_merkle_root).map_err(|e| {
                 Status::internal(format!(
                     "Error decoding alpha_proof_merkle_root: {}",
@@ -191,22 +198,31 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
 
             let verf = pof.verify();
             let pof_verf = verf.iter().all(|x| *x == pox::PoFVerify::Success);
-            verf.iter().for_each(|r| match r {
-                pox::PoFVerify::Success => info!("{:?}", r),
-                pox::PoFVerify::Fail(f) => error!("{:?}", f),
-            });
-
+            let success = verf
+                .iter()
+                .enumerate()
+                .filter_map(|(i, r)| match r {
+                    pox::PoFVerify::Success => Some(()),
+                    pox::PoFVerify::Fail(f) => {
+                        error!(message = format!("Verification {} failed", i), reason = f);
+                        None
+                    }
+                })
+                .count();
+            info!("Verification result {}/{}", success, verf.len());
             let response = ZkVerifyProofResponse { is_valid: pof_verf };
             Ok(Response::new(response))
         }
         .instrument(info_span!(
             "verify_proof",
             ip,
-            s_addr = address_brief(satellite_address),
-            prover = address_brief(prover_address),
+            s_addr = %address_brief(satellite_address),
+            prover = %address_brief(prover_address),
             epoch = epoch_for_proof,
             from = block_height_from_for_proof,
-            to = block_height_to_for_proof
+            to = block_height_to_for_proof,
+            ahash = %format!("{:x}", alpha_root_hash),
+            bhash = %format!("{:x}", beta_root_hash)
         ))
         .await
     }

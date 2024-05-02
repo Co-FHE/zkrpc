@@ -25,7 +25,14 @@ pub enum LogRotation {
 }
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
+pub enum LogFormat {
+    OneLine,
+    Pretty,
+}
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct LogConfig {
+    pub format: LogFormat,
     pub log_dir: PathBuf,
     pub log_level: LogLevel,
     pub show_source_location: bool,
@@ -101,6 +108,7 @@ impl Display for LogLevel {
 impl default::Default for LogConfig {
     fn default() -> Self {
         Self {
+            format: LogFormat::OneLine,
             log_dir: PathBuf::from("logs"),
             log_level: LogLevel::Trace,
             show_source_location: true,

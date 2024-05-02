@@ -1,4 +1,3 @@
-use color_eyre::owo_colors::OwoColorize;
 use colored::*;
 use config::LogConfig;
 use config::BASE_CONFIG;
@@ -57,35 +56,64 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
         if field.name() == "message" {
             return write!(writer, "{:?}", value);
         } else {
-            write!(writer, "{}={:?}", field.name().yellow(), value.italic())
+            write!(
+                writer,
+                "{}={:?}",
+                field.name().yellow(),
+                color_eyre::owo_colors::OwoColorize::italic(&value)
+            )
         }
     })
     .delimited(", ");
-
-    let subscriber = fmt::Subscriber::builder()
-        .with_span_events(if cfg.show_span_duration {
-            FmtSpan::CLOSE
-        } else {
-            FmtSpan::NONE
-        })
-        .event_format(
-            LogFormat::default()
+    match cfg.format {
+        config::LogFormat::OneLine => {
+            let subscriber = fmt::Subscriber::builder()
+                .with_span_events(if cfg.show_span_duration {
+                    FmtSpan::CLOSE
+                } else {
+                    FmtSpan::NONE
+                })
+                .event_format(
+                    LogFormat::default()
+                        .with_timer(tracing_subscriber::fmt::time::ChronoUtc::rfc_3339())
+                        .with_thread_ids(cfg.show_thread_ids)
+                        .with_thread_names(cfg.show_thread_names)
+                        .with_source_location(cfg.show_source_location)
+                        .with_target(cfg.show_with_target)
+                        .with_ansi(true),
+                )
+                .with_env_filter(filter)
+                .with_writer(non_blocking)
+                .fmt_fields(formatter)
+                .finish();
+            let mut init = INIT.lock().unwrap();
+            if !*init {
+                tracing::subscriber::set_global_default(subscriber)
+                    .expect("Failed to set subscriber");
+                *init = true;
+            }
+        }
+        config::LogFormat::Pretty => {
+            let subscriber = fmt::Subscriber::builder()
+                .pretty()
                 .with_timer(tracing_subscriber::fmt::time::ChronoUtc::rfc_3339())
                 .with_thread_ids(cfg.show_thread_ids)
                 .with_thread_names(cfg.show_thread_names)
-                .with_source_location(cfg.show_source_location)
+                // .with_source_location(cfg.show_source_location)
                 .with_target(cfg.show_with_target)
-                .with_ansi(true),
-        )
-        .with_env_filter(filter)
-        .with_writer(non_blocking)
-        .fmt_fields(formatter)
-        .finish();
-    let mut init = INIT.lock().unwrap();
-    if !*init {
-        tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
-        *init = true;
-    }
+                .with_ansi(true)
+                .with_env_filter(filter)
+                .with_writer(non_blocking)
+                .fmt_fields(formatter)
+                .finish();
+            let mut init = INIT.lock().unwrap();
+            if !*init {
+                tracing::subscriber::set_global_default(subscriber)
+                    .expect("Failed to set subscriber");
+                *init = true;
+            }
+        }
+    };
     guard
 }
 #[macro_export]

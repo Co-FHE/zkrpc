@@ -116,7 +116,7 @@ where
             with_event_from_span!(
                 id,
                 span,
-                "message" = "I am your father",
+                "message" = "test",
                 "time.busy" = t_busy,
                 "time.idle" = t_idle,
                 |event| {
@@ -126,7 +126,7 @@ where
                 }
             );
         } else {
-            with_event_from_span!(id, span, "message" = "I am your father", |event| {
+            with_event_from_span!(id, span, "message" = "test", |event| {
                 drop(extensions);
                 drop(span);
                 self.on_event(&event, ctx);
