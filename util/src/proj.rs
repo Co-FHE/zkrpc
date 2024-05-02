@@ -57,7 +57,7 @@ use types::Pos3D;
 const RAD: Decimal = dec!(0.0174532925199432957692369077);
 const EARTH_RADIUS: Decimal = dec!(6378.137);
 // 1/ 298.257223563
-const FLATTENING: Decimal = dec!(0.0033528106647474807198455286);
+// const FLATTENING: Decimal = dec!(0.0033528106647474807198455286);
 const E2: Decimal = dec!(0.0066943799901413169961372335);
 
 /// Projection from [WGS84] to a cartesian coordinate system for fast
@@ -120,7 +120,7 @@ impl FlatProjection<Decimal> {
         // see https://github.com/mapbox/cheap-ruler/
 
         let one = Decimal::ONE;
-        let two = Decimal::TWO;
+        // let two = Decimal::TWO;
 
         // Values that define WGS84 ellipsoid model of the Earth
 
@@ -442,9 +442,9 @@ fn bearing_unstable(dx: Decimal, dy: Decimal) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::FlatProjection;
+    use crate::proj::FlatProjection;
     use assert_approx_eq::assert_approx_eq;
-    use num_traits::Float;
+    // use num_traits::Float;
     use rust_decimal::prelude::*;
     use rust_decimal_macros::dec;
 

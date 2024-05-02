@@ -1,8 +1,12 @@
-use std::{default, path::PathBuf};
+use std::{
+    default,
+    fmt::{Debug, Display},
+    path::PathBuf,
+};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields, rename_all = "lowercase")]
 pub enum LogLevel {
     Trace,
@@ -11,7 +15,7 @@ pub enum LogLevel {
     Warn,
     Error,
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields, rename_all = "lowercase")]
 pub enum LogRotation {
     Minutely,
@@ -19,16 +23,18 @@ pub enum LogRotation {
     Daily,
     Never,
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct LogConfig {
     pub log_dir: PathBuf,
     pub log_level: LogLevel,
-    pub show_file_path: bool,
-    pub show_line_number: bool,
+    pub show_source_location: bool,
     pub show_with_target: bool,
+    pub show_thread_ids: bool,
+    pub show_thread_names: bool,
     pub write_to_file: bool,
     pub rotation: LogRotation,
+    pub show_span_duration: bool,
 }
 impl Into<tracing_appender::rolling::Rotation> for LogRotation {
     fn into(self) -> tracing_appender::rolling::Rotation {
@@ -41,9 +47,9 @@ impl Into<tracing_appender::rolling::Rotation> for LogRotation {
     }
 }
 // implement into tracing::LevelFilter for LogLevel
-impl Into<tracing::Level> for LogLevel {
-    fn into(self) -> tracing::Level {
-        match self {
+impl From<LogLevel> for tracing::Level {
+    fn from(value: LogLevel) -> Self {
+        match value {
             LogLevel::Trace => tracing::Level::TRACE,
             LogLevel::Debug => tracing::Level::DEBUG,
             LogLevel::Info => tracing::Level::INFO,
@@ -53,14 +59,26 @@ impl Into<tracing::Level> for LogLevel {
     }
 }
 // implement into tracing::LevelFilter for LogLevel
-impl Into<tracing::level_filters::LevelFilter> for LogLevel {
-    fn into(self) -> tracing::level_filters::LevelFilter {
-        match self {
+impl From<LogLevel> for tracing::level_filters::LevelFilter {
+    fn from(value: LogLevel) -> Self {
+        match value {
             LogLevel::Trace => tracing::level_filters::LevelFilter::TRACE,
             LogLevel::Debug => tracing::level_filters::LevelFilter::DEBUG,
             LogLevel::Info => tracing::level_filters::LevelFilter::INFO,
             LogLevel::Warn => tracing::level_filters::LevelFilter::WARN,
             LogLevel::Error => tracing::level_filters::LevelFilter::ERROR,
+        }
+    }
+}
+// implement into tracing::LevelFilter for LogLevel
+impl From<LogLevel> for log::LevelFilter {
+    fn from(value: LogLevel) -> Self {
+        match value {
+            LogLevel::Trace => log::LevelFilter::Trace,
+            LogLevel::Debug => log::LevelFilter::Debug,
+            LogLevel::Info => log::LevelFilter::Info,
+            LogLevel::Warn => log::LevelFilter::Warn,
+            LogLevel::Error => log::LevelFilter::Error,
         }
     }
 }
@@ -75,17 +93,23 @@ impl AsRef<str> for LogLevel {
         }
     }
 }
-
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
 impl default::Default for LogConfig {
     fn default() -> Self {
         Self {
             log_dir: PathBuf::from("logs"),
             log_level: LogLevel::Trace,
-            show_file_path: true,
-            show_line_number: true,
+            show_source_location: true,
+            show_thread_ids: false,
+            show_thread_names: false,
             show_with_target: true,
             write_to_file: false,
             rotation: LogRotation::Daily,
+            show_span_duration: false,
         }
     }
 }

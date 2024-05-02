@@ -5,8 +5,6 @@ pub mod pb {
 mod test_client {
     use std::path::PathBuf;
 
-    use crate::rpc::zkrpc;
-
     use super::*;
     use logger::initialize_logger;
     use pb::zk_service_client::ZkServiceClient;
@@ -14,19 +12,19 @@ mod test_client {
     use tokio::runtime::Runtime;
     use tracing::{error, info};
     #[test]
-    fn test_zg(){
-        
-    }
+    fn test_zg() {}
     #[test]
     fn test_zk_rpc() {
-        let _guard = initialize_logger(&config::config::LogConfig {
-            log_level: config::config::LogLevel::Info,
+        let _guard = initialize_logger(&config::LogConfig {
+            log_level: config::LogLevel::Info,
             write_to_file: false,
-            show_file_path: false,
-            show_line_number: false,
+            show_source_location: false,
+            show_thread_ids: false,
+            show_thread_names: false,
             show_with_target: false,
+            show_span_duration: false,
             log_dir: PathBuf::new(),
-            rotation: config::config::LogRotation::Never,
+            rotation: config::LogRotation::Never,
         });
         let rt = Runtime::new().unwrap();
 
@@ -34,8 +32,8 @@ mod test_client {
             // Start the server
             let port = 15937;
             // let _server_handle = tokio::spawn(async move {
-            //     let mut cfg = config::config::Config::new().unwrap();
-            //     cfg.rpc = config::config::RpcConfig {
+            //     let mut cfg = config::Config::new().unwrap();
+            //     cfg.rpc = config::RpcConfig {
             //         rpc_host: "127.0.0.1".to_string(),
             //         rpc_port: port,
             //     };

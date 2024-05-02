@@ -1,4 +1,4 @@
-use config::config::PoxConfig;
+use config::PoxConfig;
 // use config::config::{COORDINATE_PRECISION_BIGINT, RSPR_PRECISION_BIGINT};
 use lazy_static::lazy_static;
 use num_bigint::{BigInt, BigUint, ToBigInt};

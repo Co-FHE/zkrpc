@@ -1,4 +1,3 @@
-use halo2curves::Coordinates;
 use num_bigint::BigInt;
 use rust_decimal::Decimal;
 
@@ -69,7 +68,7 @@ impl Pos2D<BigInt> {
     pub fn new_from_f64(x: f64, y: f64, coordinate_multiplier: &BigInt) -> Result<Self, Error> {
         Ok(Self {
             x: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
-            y: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
+            y: BigInt::fixed_from_f64(y, coordinate_multiplier)?,
         })
     }
     pub fn new_from_decimal(x: Decimal, y: Decimal, exp: u32) -> Result<Self, Error> {
@@ -80,11 +79,16 @@ impl Pos2D<BigInt> {
     }
 }
 impl Pos3D<BigInt> {
-    pub fn new_from_f64(x: f64, y: f64, coordinate_multiplier: &BigInt) -> Result<Self, Error> {
+    pub fn new_from_f64(
+        x: f64,
+        y: f64,
+        height: f64,
+        coordinate_multiplier: &BigInt,
+    ) -> Result<Self, Error> {
         Ok(Self {
             x: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
-            y: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
-            height: BigInt::fixed_from_f64(x, coordinate_multiplier)?,
+            y: BigInt::fixed_from_f64(y, coordinate_multiplier)?,
+            height: BigInt::fixed_from_f64(height, coordinate_multiplier)?,
         })
     }
     pub fn new_from_decimal(

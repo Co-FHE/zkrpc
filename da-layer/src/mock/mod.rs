@@ -1,14 +1,13 @@
 mod db;
 mod models;
 
-use std::{collections::HashMap, f32::consts::E};
+use std::collections::HashMap;
 
 use flat_projection::*;
 pub use models::*;
 use rust_decimal::Decimal;
 use tracing::{error, warn};
-use types::{CompletePackets, Packet, Packets, Pos2D, Pos3D, Satellite, Terminal};
-
+use types::{CompletePackets, Packet, Packets,  Pos3D, Satellite, Terminal};
 use crate::{DaLayerTrait, Error};
 // use proj::{Coord, Proj};
 
@@ -243,7 +242,7 @@ impl DaLayerTrait for MockLocalDB {
         Ok(satellites)
     }
 
-    async fn new(cfg: &config::config::DaLayerConfig) -> Result<Self, crate::Error> {
+    async fn new(cfg: &config::DaLayerConfig) -> Result<Self, crate::Error> {
         // let from = "EPSG:4326";
         // let to = "EPSG:3309";
         // let proj = Proj::new_known_crs(&from, &to, None).map_err(|e| {
@@ -251,7 +250,7 @@ impl DaLayerTrait for MockLocalDB {
         //     error!("{}", err);
         //     err
         // })?;
-        if let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg {
+        if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg {
             let db = db::Db::new(&cfg).await?;
             Ok(Self { db })
         } else {
@@ -263,16 +262,15 @@ impl DaLayerTrait for MockLocalDB {
 }
 #[cfg(test)]
 mod tests {
-    use config::config::LogConfig;
     use logger::init_logger_for_test;
-    use tracing::{debug, info};
+    use tracing::debug;
 
     use super::*;
 
     #[tokio::test]
     async fn test_db() {
         let _guard = init_logger_for_test!();
-        let cfg = config::config::Config::new().unwrap();
+        let cfg = config::Config::new().unwrap();
         let _ = MockLocalDB::new(&cfg.da_layer)
             .await
             .expect("create MockLocalDB failed");
@@ -280,7 +278,7 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_satellite_with_terminals_block_from_to() {
         let _guard = init_logger_for_test!();
-        let cfg = config::config::Config::new().unwrap();
+        let cfg = config::Config::new().unwrap();
         let db = MockLocalDB::new(&cfg.da_layer)
             .await
             .expect("create MockLocalDB failed");

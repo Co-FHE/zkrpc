@@ -10,7 +10,8 @@ types = { path = "../types" }
 config = { path = "../config" }
 logger = { path = "../logger" }
 da-layer = { path = "../da-layer" }
-num-bigint = "0.4.4"
+util = { path = "../util" }
+num-bigint = { version = "0.4.4", features = ["serde"] }
 rust_decimal = "1.35.0"
 rayon = "1.10.0"
 zkt = { path = "../zkt" }

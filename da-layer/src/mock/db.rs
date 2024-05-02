@@ -1,11 +1,8 @@
-use std::collections::HashMap;
-
 use crate::error::Error;
-use crate::{ip_packets, satellite, satellite_track, terminal};
-use config::config::MySQLConfig;
-use sea_orm::{ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, QueryOrder};
-use sea_orm::{JoinType, QuerySelect};
-use tracing::{info, warn};
+use crate::{ip_packets, satellite_track};
+use config::MySQLConfig;
+use sea_orm::{ColumnTrait, ConnectOptions, EntityTrait, QueryFilter, QueryOrder};
+use tracing::*;
 
 use super::prelude::*;
 use super::terminal_track;
@@ -16,21 +13,36 @@ pub struct Db {
 }
 impl Db {
     pub async fn new(config: &MySQLConfig) -> Result<Self, Error> {
+        // let _span = debug_span!("init_mysql").entered();
+        info!("Connecting to MySQL...");
+        let mut db_opt = ConnectOptions::new(config.mysql_url());
+        if let Some(log_level) = &config.sqlx_log_level_filter {
+            db_opt.sqlx_logging_level(log_level.clone().into());
+        } else {
+            db_opt.sqlx_logging(false);
+        }
+
+        let db = sea_orm::Database::connect(db_opt).await.map_err(|e| {
+            Error::DbErr(
+                format!("Connect to database {} failed", config.mysql_url()),
+                e,
+            )
+        })?;
+
         info!(
-            "Connecting to MySQL database at mysql://{user}@{host}:{port}/{db}",
-            user = config.user,
-            host = config.host,
-            port = config.port,
-            db = config.database
+            message = %"MySQL Connected",
+            db = format!(
+                "mysql://{user}@{host}:{port}/{db}",
+                user = config.user,
+                host = config.host,
+                port = config.port,
+                db = config.database
+            ),
+            sqlx_level = config
+                .clone()
+                .sqlx_log_level_filter
+                .map_or("disabled".to_string(), |x| x.to_string()),
         );
-        let db = sea_orm::Database::connect(config.mysql_url())
-            .await
-            .map_err(|e| {
-                Error::DbErr(
-                    format!("Connect to database {} failed", config.mysql_url()),
-                    e,
-                )
-            })?;
 
         Ok(Self { db })
     }
@@ -126,7 +138,6 @@ impl Db {
 
 #[cfg(test)]
 mod tests {
-    use config::config::LogConfig;
     use logger::init_logger_for_test;
 
     use super::*;
@@ -134,8 +145,8 @@ mod tests {
     #[tokio::test]
     async fn test_db() {
         let _guard = init_logger_for_test!();
-        let cfg = config::config::Config::new().unwrap();
-        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let cfg = config::Config::new().unwrap();
+        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
         let _ = Db::new(&cfg).await.unwrap();
     }
     #[tokio::test]
@@ -143,8 +154,8 @@ mod tests {
     async fn test_db_find_all_satellite_track_with_single_satellite_block_from_to() {
         let _guard = init_logger_for_test!();
 
-        let cfg = config::config::Config::new().unwrap();
-        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let cfg = config::Config::new().unwrap();
+        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
         let db = Db::new(&cfg).await.unwrap();
         let result = db
             .find_all_satellite_track_with_single_satellite_block_from_to(
@@ -161,8 +172,8 @@ mod tests {
     async fn test_db_find_all_terminal_track_with_single_satellite_block_from_to() {
         let _guard = init_logger_for_test!();
 
-        let cfg = config::config::Config::new().unwrap();
-        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let cfg = config::Config::new().unwrap();
+        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
         let db = Db::new(&cfg).await.unwrap();
         let result = db
             .find_all_terminal_track_with_single_satellite_block_from_to(
@@ -179,8 +190,8 @@ mod tests {
     async fn test_db_find_all_ip_packets_with_single_satellite_block_from_to() {
         let _guard = init_logger_for_test!();
 
-        let cfg = config::config::Config::new().unwrap();
-        let config::config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
+        let cfg = config::Config::new().unwrap();
+        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
         let db = Db::new(&cfg).await.unwrap();
         let result = db
             .find_all_ip_packets_with_single_satellite_block_from_to(

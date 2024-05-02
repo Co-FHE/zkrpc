@@ -13,8 +13,12 @@ tracing-subscriber = { version = "0.3.18", features = [
     "env-filter",
     "fmt",
     "chrono",
+    "ansi",
 ] }
 config = { path = "../config" }
 anyhow = "1.0.82"
 tracing-appender = "0.2.3"
 lazy_static = "1.4.0"
+colored = "2.1.0"
+color-eyre = "0.6"
+nu-ansi-term = "0.50.0"

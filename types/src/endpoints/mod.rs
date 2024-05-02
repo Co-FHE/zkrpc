@@ -1,5 +1,5 @@
 mod terminal;
-use config::config::PoxConfig;
+use config::PoxConfig;
 pub use terminal::*;
 mod satellite;
 pub use satellite::*;

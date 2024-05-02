@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+use crate::LogLevel;
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub enum DaLayerConfig {
     MockDaLayerConfig(MySQLConfig),
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct MySQLConfig {
     pub host: String,
@@ -13,6 +15,7 @@ pub struct MySQLConfig {
     pub user: String,
     pub password: String,
     pub database: String,
+    pub sqlx_log_level_filter: Option<LogLevel>,
 }
 impl Default for MySQLConfig {
     fn default() -> Self {
@@ -22,6 +25,7 @@ impl Default for MySQLConfig {
             user: "root".to_owned(),
             password: "root".to_owned(),
             database: "test".to_owned(),
+            sqlx_log_level_filter: LogLevel::Debug.into(),
         }
     }
 }

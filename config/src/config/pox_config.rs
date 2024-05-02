@@ -1,10 +1,8 @@
-use std::cmp::Ordering;
-
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct PoxConfig {
     pub cooridnate_precision_bigint: u32,
@@ -37,35 +35,35 @@ impl Default for PoxConfig {
         }
     }
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct PenaltyConfig {
     pub max_diff: Decimal,
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct KernelConfig {
     pub gaussian: GaussianConfig,
     pub quadratic: QuadraticConfig,
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct GaussianTylorConfig {
     pub sigma_range: Decimal,
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct GaussianVanillaConfig {
     pub use_coef: bool,
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct GaussianConfig {
     pub sigma: Decimal,
     pub vanilla: GaussianVanillaConfig,
     pub tylor: GaussianTylorConfig,
 }
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct QuadraticConfig {
     pub max_dis_sqr: Decimal,

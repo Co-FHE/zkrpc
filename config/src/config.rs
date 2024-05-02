@@ -3,12 +3,11 @@ pub use base_config::*;
 use lazy_static;
 use std::{
     fs::File,
+    hash::{DefaultHasher, Hash, Hasher},
     io::{Read, Write},
     path::Path,
 };
-mod error;
-pub use error::*;
-mod log_config;
+pub mod log_config;
 pub use log_config::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 mod rpc_config;
@@ -17,15 +16,19 @@ mod da_layer_config;
 pub use da_layer_config::*;
 mod pox_config;
 pub use pox_config::*;
+mod compressor_config;
 mod constants;
-pub use constants::*;
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+use crate::error::Error;
+use colored::*;
+pub use compressor_config::*;
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub log: LogConfig,
     pub rpc: RpcConfig,
     pub da_layer: DaLayerConfig,
     pub pox: PoxConfig,
+    pub compressor: CompressorConfig,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -34,6 +37,7 @@ impl Default for Config {
             rpc: RpcConfig::default(),
             da_layer: DaLayerConfig::default(),
             pox: PoxConfig::default(),
+            compressor: CompressorConfig::default(),
         }
     }
 }
@@ -43,18 +47,27 @@ lazy_static::lazy_static!(
 impl Config {
     pub fn new() -> Result<Self, Error> {
         let path = BASE_CONFIG.root_path.join("config").join("config.yaml");
-        // println!(
-        //     "{}: loading config from: {}",
-        //     "Config Info".green(),
-        //     path.().to_string().blue()
-        // );
         // if path exists, load it
         let config = if path.exists() {
+            println!(
+                "config {} found, loading from the config file...",
+                path.to_string_lossy().green()
+            );
             Self::load_config(&path)?
         } else {
+            println!(
+                "{} not found, create a default config file at {}",
+                "config.yaml".yellow(),
+                path.to_string_lossy().green()
+            );
             Self::default().save_config(&path)?.to_owned()
         };
-
+        let mut hasher: DefaultHasher = DefaultHasher::new();
+        config.hash(&mut hasher);
+        println!(
+            "Load config finished, the hash of the config is: {}",
+            format!("{:x}", hasher.finish()).green()
+        );
         Ok(config)
     }
 }
@@ -89,38 +102,3 @@ pub trait PersistableConfig: Serialize + DeserializeOwned {
 }
 
 impl<T: ?Sized> PersistableConfig for T where T: Serialize + DeserializeOwned {}
-
-#[cfg(test)]
-mod tests {
-    use tracing_subscriber::fmt;
-
-    use super::*;
-    use std::fs;
-
-    #[test]
-    fn test_config() {
-        // let _subscriber = fmt::Subscriber::builder()
-        //     .with_max_level(tracing::Level::INFO)
-        //     .try_init();
-
-        let config = Config::new().unwrap();
-        assert_eq!(BASE_CONFIG.env, EnvironmentKind::Testing);
-        assert_eq!(config.log.log_dir, Path::new("logs"));
-    }
-
-    #[test]
-    fn test_persistable_config() {
-        let _subscriber = fmt::Subscriber::builder()
-            .with_max_level(tracing::Level::INFO)
-            .try_init();
-        let config = Config::default();
-        // get current file path
-        let path = "src/config/test_config/config-for-test-save-load.yaml";
-        let _ = fs::remove_file(path);
-        config.save_config(path).unwrap();
-        let loaded_config = Config::load_config(path).unwrap();
-        assert_eq!(config.log.log_dir, Path::new("logs"));
-        assert_eq!(config, loaded_config);
-        // fs::remove_file(path).unwrap();
-    }
-}

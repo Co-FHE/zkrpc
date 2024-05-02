@@ -1,6 +1,6 @@
 mod rpc;
-use anyhow::Result;
-use config::config::{LogConfig, LogLevel};
+// use anyhow::Result;
+use config::{LogConfig, LogLevel};
 use logger::initialize_logger;
 use pb::*;
 use rpc::{pb, ZkRpcServer};
@@ -8,15 +8,27 @@ use rpc::{pb, ZkRpcServer};
 use clap::ArgAction;
 use clap::{Args, Parser, Subcommand};
 use pb::zk_service_client::ZkServiceClient;
-use tracing::{error, info};
+use serde::{Deserialize, Serialize};
+use tracing::{error, info, info_span, Instrument};
 
 #[derive(Subcommand)]
 pub enum Commands {
     /// list all passwords
-    Client,
-    Server,
+    Client(ClientCommandConfig),
+    Server(ServerCommandConfig),
 }
-
+#[derive(Serialize, Deserialize, Debug, Args)]
+pub struct ServerCommandConfig {
+    /// The number of passwords to generate.
+    #[arg(short = 'l', long = "level", default_value = "info")]
+    pub level: String,
+}
+#[derive(Serialize, Deserialize, Debug, Args)]
+pub struct ClientCommandConfig {
+    /// The number of passwords to generate.
+    #[arg(short = 'l', long = "level", default_value = "info")]
+    pub level: String,
+}
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
@@ -27,20 +39,36 @@ pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
 }
+use color_eyre::eyre::Result;
 #[tokio::main]
 async fn main() -> Result<()> {
+    color_eyre::install()?;
     let cli = Cli::parse();
     match cli.command {
-        Commands::Server => {
-            let mut cfg = config::config::Config::new()?;
-            cfg.log.log_level = LogLevel::Info;
+        Commands::Server(args) => {
+            let mut cfg = config::Config::new()?;
+            match args.level.as_str() {
+                "trace" => cfg.log.log_level = LogLevel::Trace,
+                "debug" => cfg.log.log_level = LogLevel::Debug,
+                "info" => cfg.log.log_level = LogLevel::Info,
+                _ => cfg.log.log_level = LogLevel::Info,
+            }
             let _guard = initialize_logger(&cfg.log);
-            let rpc_server = ZkRpcServer::new(&cfg).await?;
+            let rpc_server = ZkRpcServer::new(&cfg)
+                .instrument(info_span!("init_rpc"))
+                .await?;
+            info!("zkRpcServer listening on {}", rpc_server.addr);
             rpc_server.start().await?;
             Ok(())
         }
-        Commands::Client => {
-            let mut cfg = config::config::Config::new()?;
+        Commands::Client(args) => {
+            let mut cfg = config::Config::new()?;
+            match args.level.as_str() {
+                "trace" => cfg.log.log_level = LogLevel::Trace,
+                "debug" => cfg.log.log_level = LogLevel::Debug,
+                "info" => cfg.log.log_level = LogLevel::Info,
+                _ => cfg.log.log_level = LogLevel::Info,
+            }
             cfg.log.log_level = LogLevel::Info;
             let _guard = initialize_logger(&cfg.log);
             let mut client = ZkServiceClient::connect(format!(

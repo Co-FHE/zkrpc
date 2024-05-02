@@ -13,6 +13,7 @@ util = { path = "../util" }
 sea-orm = { version = "0.12.15", features = [
     "sqlx-mysql",
     "runtime-tokio-rustls",
+    "debug-print",
 ] }
 sea-query = "0.30.7"
 thiserror = "1.0.59"
@@ -21,3 +22,4 @@ tracing = "0.1.40"
 num-bigint = "0.4.4"
 rust_decimal = "1.35.0"
 flat_projection = "0.4.0"
+colored = "2.1.0"

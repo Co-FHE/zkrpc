@@ -125,7 +125,7 @@ impl MerkleProofStruct {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use config::config::LogConfig;
+    use config::LogConfig;
     use logger::init_logger_for_test;
     use rs_merkle::algorithms::Sha256;
     use rs_merkle::{Hasher, MerkleProof, MerkleTree};

@@ -11,7 +11,7 @@ mod mock;
 pub use mock::*;
 
 pub trait DaLayerTrait {
-    fn new(cfg: &config::config::DaLayerConfig) -> impl Future<Output = Result<Self, error::Error>>
+    fn new(cfg: &config::DaLayerConfig) -> impl Future<Output = Result<Self, error::Error>>
     where
         Self: Sized;
     fn fetch_satellite_with_terminals_block_from_to(

@@ -1,20 +1,24 @@
 log:
   log_dir: logs
   log_level: trace
-  show_file_path: true
-  show_line_number: true
+  show_source_location: true
   show_with_target: true
+  show_thread_ids: false
+  show_thread_names: false
   write_to_file: false
   rotation: daily
+  show_span_duration: false
 rpc:
   rpc_port: 15937
   rpc_host: 127.0.0.1
+  client_host: 127.0.0.1
 da_layer: !MockDaLayerConfig
   host: localhost
   port: 3306
   user: root
   password: root
   database: test
+  sqlx_log_level_filter: debug
 pox:
   cooridnate_precision_bigint: 3
   rspr_precision_bigint: 4
@@ -30,3 +34,11 @@ pox:
     quadratic:
       max_dis_sqr: '10000'
   pod_max_value: '-100'
+compressor:
+  brotli:
+    quality: 11
+    lgwin: 20
+    buffer_size: 4096
+  flate2:
+    level: 9
+    flate2_type: Zlib

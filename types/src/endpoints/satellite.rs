@@ -1,4 +1,4 @@
-use config::config::PoxConfig;
+use config::PoxConfig;
 use num_bigint::BigInt;
 use rust_decimal::Decimal;
 
