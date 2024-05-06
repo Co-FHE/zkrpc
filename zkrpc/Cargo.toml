@@ -9,7 +9,7 @@ description.workspace = true
 [dependencies]
 tonic = "0.11"
 prost = "0.12"
-tokio = { version = "1.0", features = [
+tokio = { version = "1.37", features = [
     "macros",
     "rt-multi-thread",
     "full",
@@ -33,10 +33,10 @@ flate2 = "1.0.30"
 zstd = "0.13.1"
 brotli = "6.0.0"
 util = { path = "../util" }
-serde = { version = "1.0.199", features = ["derive"] }
+serde = { version = "1.0.200", features = ["derive"] }
 tokio-console = "0.1.10"
 console-subscriber = "0.2.0"
-colored = "2.0.0"
+colored = "2.1.0"
 
 [build-dependencies]
 tonic-build = { version = "0.11" }
