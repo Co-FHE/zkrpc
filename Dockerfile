@@ -21,3 +21,5 @@ COPY --from=builder /usr/local/cargo/bin/zkrpc /usr/local/bin
 ENV ENV=dev
 
 CMD ["zkrpc","server"]
+
+RUN apt update && apt install libssl3
