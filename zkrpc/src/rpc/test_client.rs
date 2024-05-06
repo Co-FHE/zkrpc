@@ -17,7 +17,64 @@ mod test_client {
     use tokio::runtime::Runtime;
     use tracing::info;
     #[test]
-    fn test_zg() {}
+    fn test_zk_rpc_timeout() {
+        let mut cfg = config::Config::new().unwrap();
+        cfg.log.log_level = LogLevel::Info;
+        let _guard = initialize_logger(&cfg.log);
+        let rt = Runtime::new().unwrap();
+        let mut cfg = config::Config::new().unwrap();
+        cfg.rpc = config::RpcConfig {
+            rpc_host: "127.0.0.1".to_string(),
+            rpc_port: 57392,
+            client_host: "127.0.0.1".to_string(),
+            timeout: 0,
+        };
+        rt.block_on(async {
+            // Start the server
+            let port = 57392;
+            let _server_handle = tokio::spawn(async move {
+                zkrpc::ZkRpcServer::new(&cfg)
+                    .await
+                    .unwrap()
+                    .start()
+                    .await
+                    .unwrap();
+            });
+            thread::sleep(Duration::from_secs(10));
+
+            let mut client = ZkServiceClient::connect(format!("http://127.0.0.1:{}", port))
+                .await
+                .unwrap();
+            let start = 0;
+            // define mock request
+            let prover_address_mock = "0x123456";
+            let satellite_address_mock = "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838";
+            let epoch_for_proof_mock = 1;
+            let block_height_from_for_proof_mock = start;
+            let block_height_to_for_proof_mock = start + 200000;
+            let request = tonic::Request::new(ZkGenProofRequest {
+                prover_address: prover_address_mock.to_string(),
+                satellite_address: satellite_address_mock.to_string(),
+                epoch_for_proof: epoch_for_proof_mock,
+                block_height_from_for_proof: block_height_from_for_proof_mock,
+                block_height_to_for_proof: block_height_to_for_proof_mock,
+            });
+            let response = client.gen_proof(request).await;
+            info!("response: {:?}", response);
+            // assert!(response.is_ok(), "Expected Ok response, got {:?}", response);
+            // inner into the response
+            if let Err(e) = response {
+                match e.code() {
+                    tonic::Code::DeadlineExceeded => {
+                        info!("Expected DeadlineExceeded response, got {:?}", e);
+                    }
+                    _ => {
+                        panic!("response: {:?}", e);
+                    }
+                }
+            }
+        });
+    }
     #[test]
     fn test_zk_rpc() {
         let mut cfg = config::Config::new().unwrap();
@@ -29,6 +86,7 @@ mod test_client {
             rpc_host: "127.0.0.1".to_string(),
             rpc_port: 57392,
             client_host: "127.0.0.1".to_string(),
+            timeout: 30,
         };
         rt.block_on(async {
             // Start the server
