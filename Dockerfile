@@ -12,11 +12,11 @@ RUN cargo install --path ./zkrpc
 FROM debian:latest
 
 
-RUN mkdir -p /root/.space-dev/config
+# RUN mkdir -p /root/.space-dev/config
 
 COPY --from=builder /usr/local/cargo/bin/zkrpc /usr/local/bin
 
-COPY config/config.example.yaml /root/.space-dev/config/config.yaml
+# COPY config/config.example.yaml /root/.space-dev/config/config.yaml
 
 ENV ENV=dev
 

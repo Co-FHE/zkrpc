@@ -1,12 +1,12 @@
 mod db;
 mod models;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Instant};
 
 use flat_projection::*;
 pub use models::*;
 use rust_decimal::Decimal;
-use tracing::{error, warn};
+use tracing::{debug, error, warn};
 use types::{CompletePackets, Packet, Packets,  Pos3D, Satellite, Terminal};
 use crate::{DaLayerTrait, Error};
 // use proj::{Coord, Proj};
@@ -23,6 +23,8 @@ impl DaLayerTrait for MockLocalDB {
         block_height_to: u64,
     ) -> Result<Vec<(usize,types::Satellite<Decimal>)>, crate::Error> {
         // TODO: address may have lower case or upper case problem
+        debug!(message="finding satellite track",satellite_address, block_height_from, block_height_to);
+        let start_time = Instant::now();
         let satellites = self
             .db
             .find_all_satellite_track_with_single_satellite_block_from_to(
@@ -49,6 +51,9 @@ impl DaLayerTrait for MockLocalDB {
                 }
                 acc
             });
+        debug!(message="find satellite track finished", used_time=?start_time.elapsed(),satellite_num=satellites.len());
+        debug!(message="finding terminal track",satellite_address, block_height_from, block_height_to);
+        let start_time = Instant::now();
         let terminals = self
             .db
             .find_all_terminal_track_with_single_satellite_block_from_to(
@@ -67,6 +72,9 @@ impl DaLayerTrait for MockLocalDB {
                 .push(terminal_track);
                 acc
             });
+        debug!(message="find terminal track finished", used_time=?start_time.elapsed(),terminals_num=terminals.len());
+        debug!(message="finding ip packets",satellite_address, block_height_from, block_height_to);
+        let start_time = Instant::now();
         let satellite_packets = self
             .db
             .find_all_ip_packets_with_single_satellite_block_from_to(
@@ -85,6 +93,7 @@ impl DaLayerTrait for MockLocalDB {
                 .push(ip_packet);
                 acc
             });
+        debug!(message="find ip packets finished", used_time=?start_time.elapsed(),ip_packets_num=satellite_packets.len());
         let mut satellites:Vec<_> = satellites
             .into_iter()
             .filter_map(|(blocknum_saddress, satellite_track)| {
@@ -97,6 +106,7 @@ impl DaLayerTrait for MockLocalDB {
                     error!("{}", err);
                     err
                 }).ok()?;
+                
                 let proj = FlatProjection::<f64>::new(
                     satellite_track.longitude as f64,
                     satellite_track.latitude as f64,
@@ -162,6 +172,7 @@ impl DaLayerTrait for MockLocalDB {
                                 );
                                 let pos = proj
                                     .project(terminal_track.longitude as f64, terminal_track.latitude as f64);
+                                
                                 // let pos = Pos2D::<Decimal>::new_from_flat_point_f64(pos)
                                 //     .map_err(|e| {
                                 //         let err = crate::Error::TypesError(e);
@@ -237,7 +248,7 @@ impl DaLayerTrait for MockLocalDB {
                 acc
             }).into_iter().collect();
 
-            // 根据usize排序
+            // sort according to epoch
             satellites.sort_by_key(|pair| pair.0); 
         Ok(satellites)
     }

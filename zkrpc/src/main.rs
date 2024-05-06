@@ -1,15 +1,14 @@
 mod rpc;
 // use anyhow::Result;
-use config::{LogConfig, LogLevel};
+use config::LogLevel;
 use logger::initialize_logger;
 use pb::*;
 use rpc::{pb, ZkRpcServer};
 
-use clap::ArgAction;
 use clap::{Args, Parser, Subcommand};
 use pb::zk_service_client::ZkServiceClient;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info, info_span, Instrument};
+use tracing::{debug_span, error, info, Instrument};
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -55,7 +54,7 @@ async fn main() -> Result<()> {
             }
             let _guard = initialize_logger(&cfg.log);
             let rpc_server = ZkRpcServer::new(&cfg)
-                .instrument(info_span!("init_rpc"))
+                .instrument(debug_span!("init_rpc"))
                 .await?;
             info!("zkRpcServer listening on {}", rpc_server.addr);
             rpc_server.start().await?;

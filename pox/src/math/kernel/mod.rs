@@ -1,4 +1,4 @@
 mod gaussian;
-pub(crate) use gaussian::*;
 mod kernel;
+pub(crate) use gaussian::*;
 pub(crate) use kernel::*;

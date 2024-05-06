@@ -1,4 +1,4 @@
-pub fn address_brief(address: String) -> String {
+pub fn address_brief(address: &String) -> String {
     let mut result = String::new();
     let len = address.len();
     if len <= 10 {

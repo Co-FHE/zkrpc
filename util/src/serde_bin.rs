@@ -3,12 +3,13 @@ use crate::compressor::{
 };
 use config::CompressorConfig;
 use std::{io, time::Instant};
-use tracing::info;
+use tracing::{debug, debug_span};
 pub trait SerdeBinTrait: Sized + serde::Serialize + serde::de::DeserializeOwned {
     fn serialize_compress<C: CompressorTrait>(
         &self,
         cfg: &CompressorConfig,
     ) -> color_eyre::Result<Vec<u8>> {
+        let _span = debug_span!("serialize_compress").entered();
         // let span = span!(tracing::Level::INFO, "bin serialize_compress");
         // let _enter = span.enter();
         let start_time = Instant::now();
@@ -18,19 +19,20 @@ pub trait SerdeBinTrait: Sized + serde::Serialize + serde::de::DeserializeOwned 
         let mut compressed_data = compressor.compress(&data)?;
         compressed_data.insert(0, compressor.kind() as u8);
 
-        info!(
+        debug!(
             rate = %format!(
                 "{{{} => {}}}({:.2}%)",
                 data.len(),
                 compressed_data.len(),
                 compressed_data.len() as f64 / data.len() as f64 * 100.0
             ),
-            used_time = ?start_time.elapsed(),
+            compression_time = ?start_time.elapsed(),
             compressor = ?compressor,
         );
         Ok(compressed_data)
     }
     fn decompress_deserialize(data: &Vec<u8>, cfg: &CompressorConfig) -> color_eyre::Result<Self> {
+        let _span = debug_span!("decompress_deserialize").entered();
         // let span = span!(tracing::Level::INFO, "bin decompress_deserialize");
         // let _enter = span.enter();
         let start_time = Instant::now();
@@ -63,14 +65,14 @@ pub trait SerdeBinTrait: Sized + serde::Serialize + serde::de::DeserializeOwned 
             }
         };
         let decompressed_data = bincode::deserialize(&de_data)?;
-        info!(
+        debug!(
             rate = %format!(
                 "{{{} => {}}}({:.2}%)",
                 data.len(),
                 de_data.len(),
                 data.len() as f64 / de_data.len() as f64 * 100.0
             ),
-            used_time = ?start_time.elapsed(),
+            decompression_time = ?start_time.elapsed(),
             decompressor = %debug_info,
         );
 

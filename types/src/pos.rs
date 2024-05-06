@@ -2,12 +2,12 @@ use num_bigint::BigInt;
 use rust_decimal::Decimal;
 
 use crate::{Error, FixedPoint, FixedPointDecimal, FixedPointInteger, Satellite, Terminal};
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pos2D<T: FixedPoint> {
     pub x: T,
     pub y: T,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pos3D<T: FixedPoint> {
     pub x: T,
     pub y: T,
@@ -77,6 +77,12 @@ impl Pos2D<BigInt> {
             y: BigInt::fixed_from_decimal(y, exp)?,
         })
     }
+    pub fn to_decimal(&self, exp: u32) -> Result<Pos2D<Decimal>, Error> {
+        Ok(Pos2D {
+            x: self.x.fixed_to_decimal(exp)?,
+            y: self.y.fixed_to_decimal(exp)?,
+        })
+    }
 }
 impl Pos3D<BigInt> {
     pub fn new_from_f64(
@@ -103,6 +109,13 @@ impl Pos3D<BigInt> {
             height: BigInt::fixed_from_decimal(height, exp)?,
         })
     }
+    pub fn to_decimal(&self, exp: u32) -> Result<Pos3D<Decimal>, Error> {
+        Ok(Pos3D {
+            x: self.x.fixed_to_decimal(exp)?,
+            y: self.y.fixed_to_decimal(exp)?,
+            height: self.height.fixed_to_decimal(exp)?,
+        })
+    }
 }
 
 pub trait GetPos2D {
@@ -123,5 +136,80 @@ impl<T: FixedPoint> GetPos2D for Satellite<T> {
             x: self.position.x.clone(),
             y: self.position.y.clone(),
         }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use rust_decimal::Decimal;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_pos2d() {
+        let pos = Pos2D::<Decimal>::new(
+            Decimal::from_str("1.0").unwrap(),
+            Decimal::from_str("2.0").unwrap(),
+        );
+        assert_eq!(pos.x, Decimal::from_str("1.0").unwrap());
+        assert_eq!(pos.y, Decimal::from_str("2.0").unwrap());
+    }
+    #[test]
+    fn test_pos3d() {
+        let pos = Pos3D::<Decimal>::new(
+            Decimal::from_str("1.0").unwrap(),
+            Decimal::from_str("2.0").unwrap(),
+            Decimal::from_str("3.0").unwrap(),
+        );
+        assert_eq!(pos.x, Decimal::from_str("1.0").unwrap());
+        assert_eq!(pos.y, Decimal::from_str("2.0").unwrap());
+        assert_eq!(pos.height, Decimal::from_str("3.0").unwrap());
+        //test for bigint
+        let pos = Pos3D::<BigInt>::new(
+            BigInt::from(10000),
+            BigInt::from(20000),
+            BigInt::from(30000),
+        );
+        assert_eq!(pos.x, BigInt::from(10000));
+        assert_eq!(pos.y, BigInt::from(20000));
+        assert_eq!(pos.height, BigInt::from(30000));
+    }
+    #[test]
+    fn test_pos2d_from_f64() {
+        let pos = Pos2D::<Decimal>::new_from_f64(1.0, 2.0).unwrap();
+        assert_eq!(pos.x, Decimal::from_str("1.0").unwrap());
+        assert_eq!(pos.y, Decimal::from_str("2.0").unwrap());
+        //test for bigint
+        let pos = Pos2D::<BigInt>::new_from_f64(1.0, 2.0, &BigInt::from(10000)).unwrap();
+        assert_eq!(pos.x, BigInt::from(10000));
+        assert_eq!(pos.y, BigInt::from(20000));
+    }
+    #[test]
+    fn test_pos3d_from_f64() {
+        let pos = Pos3D::<Decimal>::new_from_f64(0.1, 0.2, 0.25).unwrap();
+        assert_eq!(pos.x, Decimal::from_str("0.1").unwrap());
+        assert_eq!(pos.y, Decimal::from_str("0.2").unwrap());
+        assert_eq!(pos.height, Decimal::from_str("0.25").unwrap());
+        //test for bigint
+        let pos = Pos3D::<BigInt>::new_from_f64(0.1, 0.2, 0.25, &BigInt::from(10000)).unwrap();
+        assert_eq!(pos.x, BigInt::from(1000));
+        assert_eq!(pos.y, BigInt::from(2000));
+        assert_eq!(pos.height, BigInt::from(2500));
+    }
+    #[test]
+    fn test_pos2d_to_decimal() {
+        let pos = Pos2D::<BigInt>::new_from_f64(0.0001, 0.0002, &BigInt::from(10000)).unwrap();
+        let pos = pos.to_decimal(4).unwrap();
+        assert_eq!(pos.x, Decimal::from_str("0.0001").unwrap());
+        assert_eq!(pos.y, Decimal::from_str("0.0002").unwrap());
+    }
+    #[test]
+    fn test_pos3d_to_decimal() {
+        let pos =
+            Pos3D::<BigInt>::new_from_f64(0.0001, 0.0002, 0.00025, &BigInt::from(100000)).unwrap();
+        let pos = pos.to_decimal(5).unwrap();
+        assert_eq!(pos.x, Decimal::from_str("0.0001").unwrap());
+        assert_eq!(pos.y, Decimal::from_str("0.0002").unwrap());
+        assert_eq!(pos.height, Decimal::from_str("0.00025").unwrap());
     }
 }

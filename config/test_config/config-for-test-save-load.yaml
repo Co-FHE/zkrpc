@@ -21,16 +21,18 @@ da_layer: !MockDaLayerConfig
   database: test
   sqlx_log_level_filter: debug
 pox:
-  cooridnate_precision_bigint: 3
+  coordinate_precision_bigint: 3
   rspr_precision_bigint: 4
   penalty:
     max_diff: '10'
   kernel:
+    kernel_type: GaussianTaylor
     gaussian:
-      sigma: '40000'
+      sigma: '500'
       vanilla:
         use_coef: false
-      tylor:
+      taylor:
+        max_order: 33
         sigma_range: '3.0'
     quadratic:
       max_dis_sqr: '10000'

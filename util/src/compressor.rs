@@ -160,6 +160,7 @@ mod tests {
     use super::*;
     use config::{BrotliConfig, CompressorConfig, Flate2Config};
     use logger::init_logger_for_test;
+    use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
     use tracing::{info, span, Level};
     fn test_specific_compressor<T: CompressorTrait>(compressor: T, data: &Vec<u8>) {
         let span = span!(Level::INFO, "compression test");
@@ -184,7 +185,9 @@ mod tests {
     #[test]
     fn test_compressor() {
         let _guard = init_logger_for_test!();
-        let mut compressor_config = CompressorConfig {
+        let data = include_bytes!("../../testdata/pi_big.bin").to_vec();
+
+        let compressor_config = CompressorConfig {
             brotli: BrotliConfig {
                 quality: 11,
                 lgwin: 22,
@@ -195,20 +198,29 @@ mod tests {
                 flate2_type: Flate2CompressorType::Zlib,
             },
         };
-        let data = include_bytes!("../../testdata/pi_big.bin").to_vec();
-
-        test_specific_compressor(BrotliCompressor::new(&compressor_config), &data);
-        compressor_config.brotli.buffer_size = 1024;
-        test_specific_compressor(BrotliCompressor::new(&compressor_config), &data);
-        compressor_config.brotli.buffer_size = 4096;
-        compressor_config.brotli.lgwin = 20;
-        test_specific_compressor(BrotliCompressor::new(&compressor_config), &data);
-
-        compressor_config.flate2.flate2_type = Flate2CompressorType::Zlib;
-        test_specific_compressor(Flate2Compressor::new(&compressor_config), &data);
-        compressor_config.flate2.flate2_type = Flate2CompressorType::Gzip;
-        test_specific_compressor(Flate2Compressor::new(&compressor_config), &data);
-        compressor_config.flate2.flate2_type = Flate2CompressorType::Deflate;
-        test_specific_compressor(Flate2Compressor::new(&compressor_config), &data);
+        let mut compressors = vec![compressor_config.clone(); 8];
+        compressors[0].brotli.quality = 1;
+        compressors[1].brotli.quality = 9;
+        compressors[2].brotli.quality = 10;
+        compressors[3].brotli.quality = 11;
+        compressors[4].brotli.buffer_size = 1024;
+        compressors[5].brotli.buffer_size = 4096;
+        compressors[6].brotli.lgwin = 20;
+        compressors[7].brotli.lgwin = 22;
+        compressors.par_iter().for_each(|config| {
+            let compressor = BrotliCompressor::new(config);
+            test_specific_compressor(compressor, &data);
+        });
+        let mut compressors = vec![compressor_config.clone(); 6];
+        compressors[0].flate2.level = 1;
+        compressors[1].flate2.level = 6;
+        compressors[2].flate2.level = 9;
+        compressors[3].flate2.flate2_type = Flate2CompressorType::Gzip;
+        compressors[4].flate2.flate2_type = Flate2CompressorType::Zlib;
+        compressors[5].flate2.flate2_type = Flate2CompressorType::Deflate;
+        compressors.par_iter().for_each(|config| {
+            let compressor = Flate2Compressor::new(config);
+            test_specific_compressor(compressor, &data);
+        });
     }
 }

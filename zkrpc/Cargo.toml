@@ -1,12 +1,20 @@
 [package]
 name = "zkrpc"
-version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 tonic = "0.11"
 prost = "0.12"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.0", features = [
+    "macros",
+    "rt-multi-thread",
+    "full",
+    "tracing",
+] }
 # anyhow = "1.0.82"
 color-eyre = "0.6.3"
 tracing = "0.1.40"
@@ -23,9 +31,12 @@ hex = "0.4.3"
 clap = { version = "4.5.4", features = ["derive"] }
 flate2 = "1.0.30"
 zstd = "0.13.1"
-brotli = "5.0.0"
+brotli = "6.0.0"
 util = { path = "../util" }
 serde = { version = "1.0.199", features = ["derive"] }
+tokio-console = "0.1.10"
+console-subscriber = "0.2.0"
+colored = "2.0.0"
 
 [build-dependencies]
 tonic-build = { version = "0.11" }

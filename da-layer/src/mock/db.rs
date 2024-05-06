@@ -14,7 +14,7 @@ pub struct Db {
 impl Db {
     pub async fn new(config: &MySQLConfig) -> Result<Self, Error> {
         // let _span = debug_span!("init_mysql").entered();
-        info!("Connecting to MySQL...");
+        debug!("Connecting to MySQL...");
         let mut db_opt = ConnectOptions::new(config.mysql_url());
         if let Some(log_level) = &config.sqlx_log_level_filter {
             db_opt.sqlx_logging_level(log_level.clone().into());
@@ -29,7 +29,7 @@ impl Db {
             )
         })?;
 
-        info!(
+        debug!(
             message = %"MySQL Connected",
             db = format!(
                 "mysql://{user}@{host}:{port}/{db}",
@@ -146,8 +146,11 @@ mod tests {
     async fn test_db() {
         let _guard = init_logger_for_test!();
         let cfg = config::Config::new().unwrap();
-        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-        let _ = Db::new(&cfg).await.unwrap();
+        if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
+            let _ = Db::new(&cfg).await.unwrap();
+        } else {
+            panic!("cfg.da_layer should be MockDaLayerConfig");
+        }
     }
     #[tokio::test]
     // #[cfg(exclude)]
@@ -155,17 +158,20 @@ mod tests {
         let _guard = init_logger_for_test!();
 
         let cfg = config::Config::new().unwrap();
-        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-        let db = Db::new(&cfg).await.unwrap();
-        let result = db
-            .find_all_satellite_track_with_single_satellite_block_from_to(
-                "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
-                180000,
-                500715,
-            )
-            .await
-            .unwrap();
-        info!("result len: {}", result.len());
+        if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
+            let db = Db::new(&cfg).await.unwrap();
+            let result = db
+                .find_all_satellite_track_with_single_satellite_block_from_to(
+                    "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
+                    180000,
+                    500715,
+                )
+                .await
+                .unwrap();
+            info!("result len: {}", result.len());
+        } else {
+            panic!("cfg.da_layer should be MockDaLayerConfig");
+        }
     }
     #[tokio::test]
     // #[cfg(exclude)]
@@ -173,17 +179,20 @@ mod tests {
         let _guard = init_logger_for_test!();
 
         let cfg = config::Config::new().unwrap();
-        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-        let db = Db::new(&cfg).await.unwrap();
-        let result = db
-            .find_all_terminal_track_with_single_satellite_block_from_to(
-                "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
-                180000,
-                500715,
-            )
-            .await
-            .unwrap();
-        info!("result len: {}", result.len());
+        if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
+            let db = Db::new(&cfg).await.unwrap();
+            let result = db
+                .find_all_terminal_track_with_single_satellite_block_from_to(
+                    "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
+                    180000,
+                    500715,
+                )
+                .await
+                .unwrap();
+            info!("result len: {}", result.len());
+        } else {
+            panic!("cfg.da_layer should be MockDaLayerConfig");
+        }
     }
     #[tokio::test]
     // #[cfg(exclude)]
@@ -191,16 +200,19 @@ mod tests {
         let _guard = init_logger_for_test!();
 
         let cfg = config::Config::new().unwrap();
-        let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer;
-        let db = Db::new(&cfg).await.unwrap();
-        let result = db
-            .find_all_ip_packets_with_single_satellite_block_from_to(
-                "6C:AC:B2:55:09:A5",
-                180000,
-                500715,
-            )
-            .await
-            .unwrap();
-        info!("result len: {}", result.len());
+        if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
+            let db = Db::new(&cfg).await.unwrap();
+            let result = db
+                .find_all_ip_packets_with_single_satellite_block_from_to(
+                    "6C:AC:B2:55:09:A5",
+                    180000,
+                    500715,
+                )
+                .await
+                .unwrap();
+            info!("result len: {}", result.len());
+        } else {
+            panic!("cfg.da_layer should be MockDaLayerConfig");
+        }
     }
 }

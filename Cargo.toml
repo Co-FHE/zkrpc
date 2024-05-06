@@ -1,4 +1,19 @@
 [workspace]
-members = ["zkrpc", "da-layer", "config", "logger", "types", "pox", "zkt", "util"]
+members = [
+    "zkrpc",
+    "da-layer",
+    "config",
+    "logger",
+    "types",
+    "pox",
+    "zkt",
+    "util",
+]
 
 resolver = "2"
+
+[workspace.package]
+version = "0.1.1"
+edition = "2021"
+authors = []
+description = "zk rpc"

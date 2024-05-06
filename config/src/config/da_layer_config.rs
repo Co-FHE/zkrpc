@@ -6,6 +6,7 @@ use crate::LogLevel;
 #[serde(deny_unknown_fields)]
 pub enum DaLayerConfig {
     MockDaLayerConfig(MySQLConfig),
+    NoUseConfig,
 }
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]

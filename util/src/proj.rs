@@ -14,17 +14,15 @@
 //! ```
 //! # #[macro_use]
 //! # extern crate assert_approx_eq;
-//! # extern crate num_traits;
-//! # extern crate flat_projection;
-//! #
-//! # use num_traits::float::Float;
-//! # use flat_projection::FlatProjection;
+//! # use util::proj::FlatProjection;
+//! # use rust_decimal::prelude::*;
+//! # use rust_decimal_macros::dec;
 //! #
 //! # fn main() {
-//! let (lon1, lat1) = (6.186389, 50.823194);
-//! let (lon2, lat2) = (6.953333, 51.301389);
+//! let (lon1, lat1) = (dec![6.186389], dec![50.823194]);
+//! let (lon2, lat2) = (dec![6.953333], dec![51.301389]);
 //!
-//! let proj = FlatProjection::new(6.5, 51.05);
+//! let proj = FlatProjection::new(dec![6.5], dec![51.05]);
 //!
 //! let p1 = proj.project(lon1, lat1);
 //! let p2 = proj.project(lon2, lat2);
@@ -32,7 +30,7 @@
 //! let distance = p1.distance(&p2);
 //! // -> 75.648 km
 //! #
-//! # assert_approx_eq!(distance, 75.635_595, 0.02);
+//! # assert_approx_eq!(distance.to_f64().unwrap(), 75.635_595, 0.02);
 //! # }
 //! ```
 //!
@@ -50,6 +48,7 @@ use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
 use rust_decimal::MathematicalOps;
 use rust_decimal_macros::dec;
+use tracing::warn;
 use types::FixedPoint;
 use types::Pos2D;
 use types::Pos3D;
@@ -68,17 +67,15 @@ const E2: Decimal = dec!(0.0066943799901413169961372335);
 /// ```
 /// # #[macro_use]
 /// # extern crate assert_approx_eq;
-/// # extern crate num_traits;
-/// # extern crate flat_projection;
-/// #
-/// # use num_traits::float::Float;
-/// # use flat_projection::FlatProjection;
+/// # use util::proj::FlatProjection;
+/// # use rust_decimal::prelude::*;
+/// # use rust_decimal_macros::dec;
 /// #
 /// # fn main() {
-/// let (lon1, lat1) = (6.186389, 50.823194);
-/// let (lon2, lat2) = (6.953333, 51.301389);
+/// let (lon1, lat1) = (dec!(6.186389), dec!(50.823194));
+/// let (lon2, lat2) = (dec!(6.953333), dec!(51.301389));
 ///
-/// let proj = FlatProjection::new(6.5, 51.05);
+/// let proj = FlatProjection::new(dec!(6.5), dec!(51.05));
 ///
 /// let p1 = proj.project(lon1, lat1);
 /// let p2 = proj.project(lon2, lat2);
@@ -86,7 +83,7 @@ const E2: Decimal = dec!(0.0066943799901413169961372335);
 /// let distance = p1.distance(&p2);
 /// // -> 75.648 km
 /// #
-/// # assert_approx_eq!(distance, 75.635_595, 0.02);
+/// # assert_approx_eq!(distance.to_f64().unwrap(), 75.635_595, 0.02);
 /// # }
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
@@ -112,9 +109,10 @@ impl FlatProjection<Decimal> {
     /// the given latitude.
     ///
     /// ```
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal_macros::dec;
     /// #
-    /// let proj = FlatProjection::new(7., 51.);
+    /// let proj = FlatProjection::new(dec!(7.), dec!(51.));
     /// ```
     pub fn new(longitude: Decimal, latitude: Decimal) -> FlatProjection<Decimal> {
         // see https://github.com/mapbox/cheap-ruler/
@@ -157,11 +155,13 @@ impl FlatProjection<Decimal> {
     /// [`FlatPoint`]: struct.FlatPoint.html
     ///
     /// ```
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal::prelude::*;
+    /// # use rust_decimal_macros::dec;
     /// #
-    /// let (lon, lat) = (6.186389, 50.823194);
+    /// let (lon, lat) = (dec!(6.186389), dec!(50.823194));
     ///
-    /// let proj = FlatProjection::new(6., 51.);
+    /// let proj = FlatProjection::new(dec!(6.), dec!(51.));
     ///
     /// let flat_point = proj.project(lon, lat);
     /// ```
@@ -177,11 +177,13 @@ impl FlatProjection<Decimal> {
     /// [`FlatPoint`]: struct.FlatPoint.html
     ///
     /// ```
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal::prelude::*;
+    /// # use rust_decimal_macros::dec;
     /// #
-    /// let (lon, lat) = (6.186389, 50.823194);
+    /// let (lon, lat) = (dec!(6.186389), dec!(50.823194));
     ///
-    /// let proj = FlatProjection::new(6., 51.);
+    /// let proj = FlatProjection::new(dec!(6.), dec!(51.));
     ///
     /// let flat_point = proj.project(lon, lat);
     ///
@@ -205,17 +207,19 @@ impl FlatProjection<Decimal> {
 /// # #[macro_use]
 /// # extern crate assert_approx_eq;
 /// #
-/// # use flat_projection::FlatProjection;
+/// # use util::proj::FlatProjection;
+/// # use rust_decimal::prelude::*;
+/// # use rust_decimal_macros::dec;
 /// #
 /// # fn main() {
-/// let (lon, lat) = (6.186389, 50.823194);
+/// let (lon, lat) = (dec!(6.186389), dec!(50.823194));
 ///
-/// let proj = FlatProjection::new(6., 51.);
+/// let proj = FlatProjection::new(dec!(6.), dec!(51.));
 ///
 /// let flat_point = proj.project(lon, lat);
 /// #
-/// # assert_approx_eq!(flat_point.x, 13.0845f64, 0.001);
-/// # assert_approx_eq!(flat_point.y, -19.6694f64, 0.001);
+/// # assert_approx_eq!(flat_point.x.to_f64().unwrap(), 13.0845f64, 0.001);
+/// # assert_approx_eq!(flat_point.y.to_f64().unwrap(), -19.6694f64, 0.001);
 /// # }
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
@@ -253,17 +257,15 @@ impl FlatPoint<Decimal> {
     /// ```
     /// # #[macro_use]
     /// # extern crate assert_approx_eq;
-    /// # extern crate num_traits;
-    /// # extern crate flat_projection;
-    /// #
-    /// # use num_traits::float::Float;
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal::prelude::*;
+    /// # use rust_decimal_macros::dec;
     /// #
     /// # fn main() {
-    /// let (lon1, lat1) = (6.186389, 50.823194);
-    /// let (lon2, lat2) = (6.953333, 51.301389);
+    /// let (lon1, lat1) = (dec!(6.186389), dec!(50.823194));
+    /// let (lon2, lat2) = (dec!(6.953333), dec!(51.301389));
     ///
-    /// let proj = FlatProjection::new(6.5, 51.05);
+    /// let proj = FlatProjection::new(dec!(6.5), dec!(51.05));
     ///
     /// let p1 = proj.project(lon1, lat1);
     /// let p2 = proj.project(lon2, lat2);
@@ -271,7 +273,7 @@ impl FlatPoint<Decimal> {
     /// let distance = p1.distance(&p2);
     /// // -> 75.648 km
     /// #
-    /// # assert_approx_eq!(distance, 75.635_595, 0.02);
+    /// # assert_approx_eq!(distance.to_f64().unwrap(), 75.635_595, 0.02);
     /// # }
     /// ```
     pub fn distance(&self, other: &FlatPoint<Decimal>) -> Decimal {
@@ -293,22 +295,20 @@ impl FlatPoint<Decimal> {
     /// ```
     /// # #[macro_use]
     /// # extern crate assert_approx_eq;
-    /// # extern crate num_traits;
-    /// # extern crate flat_projection;
-    /// #
-    /// # use num_traits::float::Float;
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal::prelude::*;
+    /// # use rust_decimal_macros::dec;
     /// #
     /// # fn main() {
-    /// let (lon1, lat1) = (6.186389, 50.823194);
-    /// let (lon2, lat2) = (6.953333, 51.301389);
+    /// let (lon1, lat1) = (dec!(6.186389), dec!(50.823194));
+    /// let (lon2, lat2) = (dec!(6.953333), dec!(51.301389));
     ///
-    /// let proj = FlatProjection::new(6.5, 51.05);
+    /// let proj = FlatProjection::new(dec!(6.5), dec!(51.05));
     ///
     /// let p1 = proj.project(lon1, lat1);
     /// let p2 = proj.project(lon2, lat2);
     ///
-    /// let bearing = p1.bearing(&p2);
+    /// let bearing = p1.bearing_unstable(&p2);
     /// // -> 45.3°
     /// #
     /// # assert_approx_eq!(bearing, 45.312, 0.001);
@@ -328,25 +328,23 @@ impl FlatPoint<Decimal> {
     /// ```
     /// # #[macro_use]
     /// # extern crate assert_approx_eq;
-    /// # extern crate num_traits;
-    /// # extern crate flat_projection;
-    /// #
-    /// # use num_traits::float::Float;
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal::prelude::*;
+    /// # use rust_decimal_macros::dec;
     /// #
     /// # fn main() {
-    /// let (lon1, lat1) = (6.186389, 50.823194);
-    /// let (lon2, lat2) = (6.953333, 51.301389);
+    /// let (lon1, lat1) = (dec!(6.186389), dec!(50.823194));
+    /// let (lon2, lat2) = (dec!(6.953333), dec!(51.301389));
     ///
-    /// let proj = FlatProjection::new(6.5, 51.05);
+    /// let proj = FlatProjection::new(dec!(6.5), dec!(51.05));
     ///
     /// let p1 = proj.project(lon1, lat1);
     /// let p2 = proj.project(lon2, lat2);
     ///
-    /// let (distance, bearing) = p1.distance_bearing(&p2);
+    /// let (distance, bearing) = p1.distance_bearing_unstable(&p2);
     /// // -> 75.648 km and 45.3°
     /// #
-    /// # assert_approx_eq!(distance, 75.635_595, 0.02);
+    /// # assert_approx_eq!(distance.to_f64().unwrap(), 75.635_595, 0.02);
     /// # assert_approx_eq!(bearing, 45.312, 0.001);
     /// # }
     /// ```
@@ -370,26 +368,24 @@ impl FlatPoint<Decimal> {
     /// ```
     /// # #[macro_use]
     /// # extern crate assert_approx_eq;
-    /// # extern crate num_traits;
-    /// # extern crate flat_projection;
-    /// #
-    /// # use num_traits::float::Float;
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal::prelude::*;
+    /// # use rust_decimal_macros::dec;
     /// #
     /// # fn main() {
-    /// let (lon, lat) = (30.5, 50.5);
+    /// let (lon, lat) = (dec!(30.5), dec!(50.5));
     ///
-    /// let proj = FlatProjection::new(31., 50.);
+    /// let proj = FlatProjection::new(dec!(31.), dec!(50.));
     ///
     /// let p1 = proj.project(lon, lat);
-    /// let (distance, bearing) = (1., 45.0);
+    /// let (distance, bearing) = (dec!(1.), dec!(45.0));
     /// let p2 = p1.destination(distance, bearing);
     /// #
     /// # let res_distance = p1.distance(&p2);
     /// # let (dest_lon, dest_lat) = proj.unproject(&p2);
     /// #
-    /// # assert_approx_eq!(dest_lon, 30.5098622, 0.00001);
-    /// # assert_approx_eq!(dest_lat, 50.5063572, 0.00001);
+    /// # assert_approx_eq!(dest_lon.to_f64().unwrap(), 30.5098622, 0.00001);
+    /// # assert_approx_eq!(dest_lat.to_f64().unwrap(), 50.5063572, 0.00001);
     /// # }
     /// ```
     pub fn destination(&self, dist: Decimal, bearing: Decimal) -> FlatPoint<Decimal> {
@@ -403,23 +399,21 @@ impl FlatPoint<Decimal> {
     /// ```
     /// # #[macro_use]
     /// # extern crate assert_approx_eq;
-    /// # extern crate num_traits;
-    /// # extern crate flat_projection;
-    /// #
-    /// # use num_traits::float::Float;
-    /// # use flat_projection::FlatProjection;
+    /// # use util::proj::FlatProjection;
+    /// # use rust_decimal::prelude::*;
+    /// # use rust_decimal_macros::dec;
     /// #
     /// # fn main() {
-    /// let (lon, lat) = (30.5, 50.5);
+    /// let (lon, lat) = (dec!(30.5), dec!(50.5));
     ///
-    /// let proj = FlatProjection::new(31., 50.);
+    /// let proj = FlatProjection::new(dec!(31.), dec!(50.));
     ///
     /// let p1 = proj.project(lon, lat);
-    /// let p2 = p1.offset(10., 10.);
+    /// let p2 = p1.offset(dec!(10.), dec!(10.));
     /// #
     /// # let (dest_lon, dest_lat) = proj.unproject(&p2);
-    /// # assert_approx_eq!(dest_lon, 30.6394736, 0.00001);
-    /// # assert_approx_eq!(dest_lat, 50.5899044, 0.00001);
+    /// # assert_approx_eq!(dest_lon.to_f64().unwrap(), 30.6394736, 0.00001);
+    /// # assert_approx_eq!(dest_lat.to_f64().unwrap(), 50.5899044, 0.00001);
     /// # }
     /// ```
     pub fn offset(&self, dx: Decimal, dy: Decimal) -> FlatPoint<Decimal> {
@@ -439,12 +433,40 @@ fn bearing_unstable(dx: Decimal, dy: Decimal) -> f64 {
         .atan2(-dy.to_f64().unwrap())
         .to_degrees()
 }
-
+pub fn pos_to_u64_for_debug(pos: f64) -> u64 {
+    let mut pos = pos + 50000_f64;
+    if pos < 0.0 {
+        warn!("pos should be not less than 50000");
+        pos = 0.0;
+    }
+    if pos > 50000.0 * 2.0 {
+        warn!("pos should be not greater than 50000");
+        pos = 50000.0 * 2.0;
+    }
+    (pos * 100.0) as u64
+}
+pub fn pos_from_u64_for_debug(pos: u64) -> f64 {
+    (pos as f64) / 100.0 - 50000.0
+}
+pub fn lonlat_to_u64_for_debug(lonlat: f64) -> u64 {
+    let mut lonlat = 200.0 + lonlat;
+    if lonlat < 0.0 {
+        warn!("lonlat should be not less than -200");
+        lonlat = 0.0;
+    }
+    if lonlat > 200.0 * 2.0 {
+        warn!("lonlat should be not greater than 200");
+        lonlat = 200.0 * 2.0;
+    }
+    (lonlat * 100.0) as u64
+}
+pub fn lonlat_from_u64_for_debug(lonlat: u64) -> f64 {
+    (lonlat as f64) / 100.0 - 200.0
+}
 #[cfg(test)]
 mod tests {
     use crate::proj::FlatProjection;
     use assert_approx_eq::assert_approx_eq;
-    // use num_traits::Float;
     use rust_decimal::prelude::*;
     use rust_decimal_macros::dec;
 

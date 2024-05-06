@@ -1,10 +1,8 @@
 #![forbid(unsafe_code)]
 
-use num_bigint::BigInt;
 use rust_decimal::Decimal;
-use std::pin::Pin;
-use std::{collections::HashMap, future::Future};
-use types::{FixedPoint, Satellite, Terminal};
+use std::future::Future;
+use types::Satellite;
 mod error;
 use error::*;
 mod mock;

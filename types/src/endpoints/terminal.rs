@@ -1,7 +1,7 @@
 use config::PoxConfig;
 // use config::config::{COORDINATE_PRECISION_BIGINT, RSPR_PRECISION_BIGINT};
-use lazy_static::lazy_static;
-use num_bigint::{BigInt, BigUint, ToBigInt};
+
+use num_bigint::BigInt;
 use rust_decimal::Decimal;
 
 use crate::{
@@ -18,7 +18,7 @@ use crate::{
 //         .to_bigint()
 //         .unwrap();
 // }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Terminal<T: FixedPoint> {
     pub address: String,
     pub position: Pos2D<T>,
@@ -26,7 +26,7 @@ pub struct Terminal<T: FixedPoint> {
     // terminal may do not receive packets
     pub terminal_packets: Option<Packets>,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Alpha<T: FixedPoint> {
     pub rspr: T,
 }
@@ -102,12 +102,61 @@ impl EndPointFrom<Terminal<Decimal>> for Terminal<BigInt> {
             position: Pos2D::<BigInt>::new_from_decimal(
                 value.position.x,
                 value.position.y,
-                cfg.cooridnate_precision_bigint,
+                cfg.coordinate_precision_bigint,
             )?,
             alpha: Alpha::<BigInt> {
                 rspr: BigInt::fixed_from_decimal(value.alpha.rspr, cfg.rspr_precision_bigint)?,
             },
             terminal_packets: value.terminal_packets,
         })
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal::Decimal;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_terminal_new_from_f64() {
+        let terminal =
+            Terminal::<Decimal>::new_from_f64("address".to_string(), 1.0, 2.0, 3.0, None).unwrap();
+        assert_eq!(terminal.address, "address");
+        assert_eq!(terminal.position.x, Decimal::from_str("1.0").unwrap());
+        assert_eq!(terminal.position.y, Decimal::from_str("2.0").unwrap());
+        assert_eq!(terminal.alpha.rspr, Decimal::from_str("3.0").unwrap());
+        assert_eq!(terminal.terminal_packets, None);
+    }
+
+    #[test]
+    fn test_alpha_new_from_f64() {
+        let alpha = Alpha::<Decimal>::new_from_f64(1.0).unwrap();
+        assert_eq!(alpha.rspr, Decimal::from_str("1.0").unwrap());
+    }
+
+    #[test]
+    fn test_terminal_new_from_decimal() {
+        let terminal = Terminal::<BigInt>::new_from_decimal(
+            "address".to_string(),
+            Decimal::from_str("1.0").unwrap(),
+            Decimal::from_str("2.0").unwrap(),
+            Decimal::from_str("3.0").unwrap(),
+            2,
+            3,
+            None,
+        )
+        .unwrap();
+        assert_eq!(terminal.address, "address");
+        assert_eq!(terminal.position.x, BigInt::from(100));
+        assert_eq!(terminal.position.y, BigInt::from(200));
+        assert_eq!(terminal.alpha.rspr, BigInt::from(3000));
+        assert_eq!(terminal.terminal_packets, None);
+    }
+
+    #[test]
+    fn test_alpha_new_from_decimal() {
+        let alpha =
+            Alpha::<BigInt>::new_from_decimal(Decimal::from_str("1.0").unwrap(), 3).unwrap();
+        assert_eq!(alpha.rspr, BigInt::from(1000));
     }
 }

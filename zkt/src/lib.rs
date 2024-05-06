@@ -248,7 +248,7 @@ pub fn gen_proof(coefs: Vec<Fp>, xs: Vec<Fp>) -> Result<(Vec<u8>, Vec<u8>), trai
         .map(|(coef, x)| coef * x)
         .sum();
     let out = sum;
-    println!("Public out=:{:?}", out);
+    // println!("Public out=:{:?}", out);
     let pubinputs = vec![out];
 
     let coefs = coefs.into_iter().map(Value::known).collect();
@@ -295,7 +295,7 @@ pub fn gen_proof(coefs: Vec<Fp>, xs: Vec<Fp>) -> Result<(Vec<u8>, Vec<u8>), trai
     let vecu8_out = format!("{:?}", out).as_bytes().to_vec();
     Ok((vecu8_out, proof))
 }
-
+#[derive(Debug)]
 pub struct ZKT;
 
 impl traits::ZkTraitHalo2 for ZKT {

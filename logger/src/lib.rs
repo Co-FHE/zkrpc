@@ -3,6 +3,7 @@ use config::LogConfig;
 use config::BASE_CONFIG;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
+use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::RollingFileAppender;
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -16,7 +17,11 @@ lazy_static! {
 }
 
 pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
-    let filter = EnvFilter::new(&cfg.log_level);
+    // let filter = EnvFilter::new(format!("h2=info,=debug"));
+    let filter: LevelFilter = cfg.log_level.clone().into();
+    let filter = EnvFilter::from_default_env()
+        .add_directive(filter.into())
+        .add_directive("h2=info".parse().unwrap());
     let (non_blocking, guard) = if cfg.write_to_file {
         let file_appender = RollingFileAppender::new(
             cfg.clone().rotation.into(),
@@ -67,6 +72,7 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
     .delimited(", ");
     match cfg.format {
         config::LogFormat::OneLine => {
+            // let console_layer = console_subscriber::spawn();
             let subscriber = fmt::Subscriber::builder()
                 .with_span_events(if cfg.show_span_duration {
                     FmtSpan::CLOSE
@@ -94,6 +100,8 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
             }
         }
         config::LogFormat::Pretty => {
+            // .with(...)
+            // .init();
             let subscriber = fmt::Subscriber::builder()
                 .pretty()
                 .with_timer(tracing_subscriber::fmt::time::ChronoUtc::rfc_3339())
@@ -110,6 +118,25 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
             if !*init {
                 tracing::subscriber::set_global_default(subscriber)
                     .expect("Failed to set subscriber");
+                *init = true;
+            }
+        }
+        config::LogFormat::TokioConsole => {
+            // spawn the console server in the background,
+            // returning a `Layer`:
+            let console_layer = console_subscriber::spawn();
+
+            // build a `Subscriber` by combining layers with a
+            // `tracing_subscriber::Registry`:
+            let mut init = INIT.lock().unwrap();
+            if !*init {
+                tracing_subscriber::registry()
+                    // add the console layer to the subscriber
+                    .with(console_layer)
+                    // add other layers...
+                    .with(tracing_subscriber::fmt::layer())
+                    // .with(...)
+                    .init();
                 *init = true;
             }
         }

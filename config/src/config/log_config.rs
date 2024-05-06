@@ -28,6 +28,7 @@ pub enum LogRotation {
 pub enum LogFormat {
     OneLine,
     Pretty,
+    TokioConsole,
 }
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]

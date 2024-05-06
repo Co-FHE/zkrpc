@@ -4,8 +4,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
+pub enum KernelTypeConfig {
+    GaussianTaylor,
+    Quadratic,
+}
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct PoxConfig {
-    pub cooridnate_precision_bigint: u32,
+    pub coordinate_precision_bigint: u32,
     pub rspr_precision_bigint: u32,
 
     pub penalty: PenaltyConfig,
@@ -13,17 +19,28 @@ pub struct PoxConfig {
 
     pub pod_max_value: Decimal,
 }
+impl PoxConfig {
+    pub fn coordinate_precision_pow10(&self) -> u64 {
+        10_u64.pow(self.coordinate_precision_bigint)
+    }
+    pub fn rspr_precision_pow10(&self) -> u64 {
+        10_u64.pow(self.rspr_precision_bigint)
+    }
+}
 impl Default for PoxConfig {
     fn default() -> Self {
         Self {
-            cooridnate_precision_bigint: 3,
+            coordinate_precision_bigint: 3,
             rspr_precision_bigint: 4,
             penalty: PenaltyConfig { max_diff: dec!(10) },
             kernel: KernelConfig {
+                kernel_type: KernelTypeConfig::GaussianTaylor,
+                // kernel_type: KernelTypeConfig::Quadratic,
                 gaussian: GaussianConfig {
-                    sigma: dec!(40000),
+                    sigma: dec!(500),
                     vanilla: GaussianVanillaConfig { use_coef: false },
-                    tylor: GaussianTylorConfig {
+                    taylor: GaussianTaylorConfig {
+                        max_order: 33,
                         sigma_range: dec!(3.0),
                     },
                 },
@@ -43,12 +60,14 @@ pub struct PenaltyConfig {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct KernelConfig {
+    pub kernel_type: KernelTypeConfig,
     pub gaussian: GaussianConfig,
     pub quadratic: QuadraticConfig,
 }
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
-pub struct GaussianTylorConfig {
+pub struct GaussianTaylorConfig {
+    pub max_order: usize,
     pub sigma_range: Decimal,
 }
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
@@ -61,7 +80,7 @@ pub struct GaussianVanillaConfig {
 pub struct GaussianConfig {
     pub sigma: Decimal,
     pub vanilla: GaussianVanillaConfig,
-    pub tylor: GaussianTylorConfig,
+    pub taylor: GaussianTaylorConfig,
 }
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]

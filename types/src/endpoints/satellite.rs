@@ -3,10 +3,9 @@ use num_bigint::BigInt;
 use rust_decimal::Decimal;
 
 use crate::{
-    endpoints::terminal::Terminal, CompletePackets, EndPointFrom, Error, FixedPoint, Packets,
-    Pos2D, Pos3D,
+    endpoints::terminal::Terminal, CompletePackets, EndPointFrom, Error, FixedPoint, Pos3D,
 };
-use std::{collections::HashMap, fmt::format};
+
 #[derive(Debug, Clone)]
 pub struct Satellite<T: FixedPoint> {
     pub epoch: usize,
@@ -26,7 +25,7 @@ impl EndPointFrom<Satellite<Decimal>> for Satellite<BigInt> {
                 value.position.x,
                 value.position.y,
                 value.position.height,
-                cfg.cooridnate_precision_bigint,
+                cfg.coordinate_precision_bigint,
             )?,
             terminals: value
                 .terminals
