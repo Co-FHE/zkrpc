@@ -7,9 +7,10 @@ use pb::*;
 use pox::{PoDSatelliteResult, PoFSatelliteResult};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::collections::HashMap;
-use tokio::time::Instant;
+use std::time::Duration;
+use tokio::time::{timeout, Instant};
 use tonic::{transport::Server, Request, Response, Status};
-use tracing::{debug, debug_span,  info, info_span, warn, Instrument};
+use tracing::{debug, debug_span, error, info, info_span, warn, Instrument};
 use types::{EndPointFrom, Satellite};
 use util::blockchain::address_brief;
 use util::compressor::BrotliCompressor;
@@ -38,7 +39,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         let block_height_from_for_proof = zk_request.block_height_from_for_proof;
         let block_height_to_for_proof = zk_request.block_height_to_for_proof;
 
-        async move {
+        let zkrpc_proof = async move {
             info!(message = "!!!!!!!!!!!!!!!!!!!  Received zk proof !!!!!!!!!!!!!!!!!!!");
             let start_time = Instant::now();
             debug!(message = "start fetching data from DA-layer");
@@ -181,8 +182,15 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             epoch = epoch_for_proof,
             from = block_height_from_for_proof,
             to = block_height_to_for_proof
-        ))
-        .await
+        ));
+        let zkrpc_proof = timeout(Duration::from_secs(self.cfg.rpc.timeout), zkrpc_proof).await;
+        match zkrpc_proof {
+            Ok(r) => r,
+            Err(e) => {
+                error!(message = "zkRPC Proof Timeout", ?e);
+                Err(Status::deadline_exceeded("zkRPC Proof Timeout"))
+            }            
+        }
     }
     async fn verify_proof(
         &self,
@@ -203,7 +211,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         let mut hasher = DefaultHasher::new();
         zk_request.beta_proof_merkle_root.hash(&mut hasher);
         let beta_root_hash = hasher.finish();
-        async move {
+        let zkrpc_verify=async move {
             info!(message = "###################  Received zk verification request ###################");
             let start_time = Instant::now();
             let deser_decomp_start_time = Instant::now();
@@ -302,8 +310,16 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             to = block_height_to_for_proof,
             ahash = %format!("{:x}", alpha_root_hash),
             bhash = %format!("{:x}", beta_root_hash)
-        ))
-        .await
+        ));
+
+        let zkrpc_verify = timeout(Duration::from_secs(self.cfg.rpc.timeout), zkrpc_verify).await;
+        match zkrpc_verify {
+            Ok(r) => r,
+            Err(e) => {
+                error!(message = "zkRPC Verification Timeout", ?e);
+                Err(Status::deadline_exceeded("zkRPC Verification Timeout"))
+            }            
+        }
     }
 }
 impl ZkRpcServer {
