@@ -24,3 +24,5 @@ Cargo.lock
 .VSCodeCounter
 test.sh
 **/config.example.yaml
+
+zkt/tests/plonk_api_proof.bin
