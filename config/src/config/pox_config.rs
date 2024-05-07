@@ -40,7 +40,7 @@ impl Default for PoxConfig {
                     sigma: dec!(500),
                     vanilla: GaussianVanillaConfig { use_coef: false },
                     taylor: GaussianTaylorConfig {
-                        max_order: 33,
+                        max_order: 20,
                         sigma_range: dec!(3.0),
                     },
                 },

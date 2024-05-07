@@ -144,7 +144,7 @@ impl Kernel for Gaussian<Decimal, GaussianVanilla> {
 // log(x) * 2k < log(\epsilon) + 0.5*(log(2)+log(pi)+log(k)) + k * (log(k)-1)
 use rust_decimal::prelude::*;
 #[allow(dead_code)]
-fn bear_epsilon(x: Decimal, epsilon: Decimal) -> usize {
+fn torlerence_epsilon(x: Decimal, epsilon: Decimal) -> usize {
     let mut k = dec![1];
     let log_x = x.ln();
     let log_epsilon = epsilon.ln();
@@ -152,6 +152,7 @@ fn bear_epsilon(x: Decimal, epsilon: Decimal) -> usize {
         let log_k = Decimal::from(k).ln();
         let sum = log_x * dec![2] * k
             - log_epsilon
+            - k * dec!(2).ln()
             - dec![0.5] * (Decimal::from(2).ln() + Decimal::PI.ln() + log_k)
             - k * (log_k - Decimal::one());
         if sum < Decimal::zero() {
@@ -247,11 +248,11 @@ mod tests {
     #[test]
     fn test_bear_epsilon() {
         assert_eq!(
-            bear_epsilon(
+            torlerence_epsilon(
                 Decimal::from_str("3").unwrap(),
                 Decimal::from_str("0.00001").unwrap(),
             ),
-            33
+            20
         );
     }
     #[test]
