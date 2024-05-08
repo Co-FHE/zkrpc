@@ -162,8 +162,8 @@ mod tests {
             let db = Db::new(&cfg).await.unwrap();
             let result = db
                 .find_all_satellite_track_with_single_satellite_block_from_to(
-                    "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
-                    180000,
+                    "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch",
+                    0,
                     500715,
                 )
                 .await
@@ -183,8 +183,8 @@ mod tests {
             let db = Db::new(&cfg).await.unwrap();
             let result = db
                 .find_all_terminal_track_with_single_satellite_block_from_to(
-                    "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
-                    180000,
+                    "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch",
+                    0,
                     500715,
                 )
                 .await

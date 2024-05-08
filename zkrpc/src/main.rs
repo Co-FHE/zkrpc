@@ -76,12 +76,12 @@ async fn main() -> Result<()> {
             ))
             .await
             .unwrap();
-            let mut start = 200000;
+            let mut start = 60;
             loop {
                 info!("start: {:?}", start);
                 // define mock request
                 let prover_address_mock = "0x123456";
-                let satellite_address_mock = "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838";
+                let satellite_address_mock = "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch";
                 let epoch_for_proof_mock = 1;
                 let block_height_from_for_proof_mock = start;
                 let block_height_to_for_proof_mock = start + 10;
