@@ -25,19 +25,19 @@ pox:
   coordinate_precision_bigint: 3
   rspr_precision_bigint: 4
   penalty:
-    max_diff: "10"
+    max_diff: '10'
   kernel:
     kernel_type: GaussianTaylor
     gaussian:
-      sigma: "500"
+      sigma: '500'
       vanilla:
         use_coef: false
       taylor:
         max_order: 20
-        sigma_range: "3.0"
+        sigma_range: '3.0'
     quadratic:
-      max_dis_sqr: "10000"
-  pod_max_value: "-100"
+      max_dis_sqr: '10000'
+  pod_max_value: '-100'
 compressor:
   brotli:
     quality: 11
