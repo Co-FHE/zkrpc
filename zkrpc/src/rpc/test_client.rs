@@ -48,7 +48,7 @@ mod test_client {
             let start = 0;
             // define mock request
             let prover_address_mock = "0x123456";
-            let satellite_address_mock = "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838";
+            let satellite_address_mock = "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch";
             let epoch_for_proof_mock = 1;
             let block_height_from_for_proof_mock = start;
             let block_height_to_for_proof_mock = start + 200000;
@@ -84,13 +84,13 @@ mod test_client {
         let mut cfg = config::Config::new().unwrap();
         cfg.rpc = config::RpcConfig {
             rpc_host: "127.0.0.1".to_string(),
-            rpc_port: 57392,
+            rpc_port: 57398,
             client_host: "127.0.0.1".to_string(),
-            timeout: 30,
+            timeout: 1000,
         };
         rt.block_on(async {
             // Start the server
-            let port = 57392;
+            let port = 57398;
             let _server_handle = tokio::spawn(async move {
                 zkrpc::ZkRpcServer::new(&cfg)
                     .await
@@ -107,7 +107,7 @@ mod test_client {
             let start = 0;
             // define mock request
             let prover_address_mock = "0x123456";
-            let satellite_address_mock = "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838";
+            let satellite_address_mock = "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch";
             let epoch_for_proof_mock = 1;
             let block_height_from_for_proof_mock = start;
             let block_height_to_for_proof_mock = start + 200000;

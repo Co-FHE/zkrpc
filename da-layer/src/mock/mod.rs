@@ -295,8 +295,8 @@ mod tests {
             .expect("create MockLocalDB failed");
         let results = db
             .fetch_satellite_with_terminals_block_from_to(
-                "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838",
-                180000,
+                "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch",
+                0,
                 500715,
             )
             .await

@@ -13,7 +13,7 @@ rpc:
   rpc_port: 15937
   rpc_host: 127.0.0.1
   client_host: 127.0.0.1
-  timeout: 30
+  timeout: 60
 da_layer: !MockDaLayerConfig
   host: localhost
   port: 3306

@@ -14,7 +14,7 @@ impl Default for RpcConfig {
             rpc_port: 15937,
             rpc_host: "127.0.0.1".to_owned(),
             client_host: "127.0.0.1".to_owned(),
-            timeout: 30,
+            timeout: 60,
         }
     }
 }
