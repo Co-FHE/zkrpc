@@ -22,6 +22,7 @@ da_layer: !MockDaLayerConfig
   database: test
   sqlx_log_level_filter: debug
 pox:
+  rayon_num_threads: 0
   coordinate_precision_bigint: 3
   rspr_precision_bigint: 4
   penalty:

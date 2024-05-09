@@ -46,6 +46,12 @@ async fn main() -> Result<()> {
     match cli.command {
         Commands::Server(args) => {
             let mut cfg = config::Config::new()?;
+            if cfg.pox.rayon_num_threads > 0 {
+                rayon::ThreadPoolBuilder::new()
+                    .num_threads(cfg.pox.rayon_num_threads as usize)
+                    .build_global()
+                    .unwrap();
+            }
             match args.level.as_str() {
                 "trace" => cfg.log.log_level = LogLevel::Trace,
                 "debug" => cfg.log.log_level = LogLevel::Debug,

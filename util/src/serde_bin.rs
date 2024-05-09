@@ -10,8 +10,6 @@ pub trait SerdeBinTrait: Sized + serde::Serialize + serde::de::DeserializeOwned 
         cfg: &CompressorConfig,
     ) -> color_eyre::Result<Vec<u8>> {
         let _span = debug_span!("serialize_compress").entered();
-        // let span = span!(tracing::Level::INFO, "bin serialize_compress");
-        // let _enter = span.enter();
         let start_time = Instant::now();
         let data = bincode::serialize(&self)?;
         let compressor = C::new(cfg);
@@ -33,8 +31,6 @@ pub trait SerdeBinTrait: Sized + serde::Serialize + serde::de::DeserializeOwned 
     }
     fn decompress_deserialize(data: &Vec<u8>, cfg: &CompressorConfig) -> color_eyre::Result<Self> {
         let _span = debug_span!("decompress_deserialize").entered();
-        // let span = span!(tracing::Level::INFO, "bin decompress_deserialize");
-        // let _enter = span.enter();
         let start_time = Instant::now();
         if data.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "data is empty").into());

@@ -11,6 +11,7 @@ pub enum KernelTypeConfig {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct PoxConfig {
+    pub rayon_num_threads: usize,
     pub coordinate_precision_bigint: u32,
     pub rspr_precision_bigint: u32,
 
@@ -49,6 +50,7 @@ impl Default for PoxConfig {
                 },
             },
             pod_max_value: dec!(-100),
+            rayon_num_threads: 0,
         }
     }
 }

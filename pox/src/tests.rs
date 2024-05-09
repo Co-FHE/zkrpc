@@ -98,6 +98,7 @@ mod tests {
         use config::PoxConfig;
         use types::{Alpha, FixedPoint, Satellite};
         let mut cfg = PoxConfig {
+            rayon_num_threads: 0,
             kernel: KernelConfig {
                 quadratic: QuadraticConfig {
                     max_dis_sqr: dec!(25),

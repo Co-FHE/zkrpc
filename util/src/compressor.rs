@@ -65,7 +65,7 @@ impl CompressorTrait for RawCompressor {
     fn kind(&self) -> CompressorKind {
         CompressorKind::Raw
     }
-}
+} 
 impl CompressorTrait for BrotliCompressor {
     fn new(compressor_config: &CompressorConfig) -> Self {
         Self {

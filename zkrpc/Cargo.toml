@@ -37,6 +37,7 @@ serde = { version = "1.0.200", features = ["derive"] }
 tokio-console = "0.1.10"
 console-subscriber = "0.2.0"
 colored = "2.1.0"
+rayon = "1.10.0"
 
 [build-dependencies]
 tonic-build = { version = "0.11" }
