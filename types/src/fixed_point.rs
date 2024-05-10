@@ -143,7 +143,7 @@ impl FixedPoint for Ratio<BigInt> {
 
 impl FixedPointInteger for BigInt {
     fn fixed_from_f64(value: f64, multiplier: &Self) -> Result<Self, Error> {
-        let r = BigRational::from_float(value).ok_or({
+        let r = BigRational::from_float(value).ok_or_else(|| {
             let e = Error::BigIntConversionErr(
                 format!("value: {}, multiplier: {}", value.to_string(), multiplier),
                 "from f64".to_owned(),
