@@ -65,7 +65,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             debug!(block_heights = ?block_heights);
             satellite.sort_by(|a, b| a.0.cmp(&b.0));
             if satellite.is_empty() {
-                return Err(Status::not_found("No satellite found"));
+                return Err(Status::data_loss("No satellite found"));
             }
             let satellite = satellite[0].1.clone();
             debug!(
