@@ -27,5 +27,10 @@ serde = "1.0.200"
 hdrhistogram = "7.5.4"
 rand = "0.8.5"
 hex = "0.4.3"
-
-indicatif = {version = "*", features = ["rayon"]}
+tfhe = { version = "0.6.1", features = [
+    "boolean",
+    "shortint",
+    "integer",
+    "aarch64-unix",
+] }
+indicatif = { version = "*", features = ["rayon"] }

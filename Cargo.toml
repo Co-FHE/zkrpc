@@ -7,7 +7,7 @@ members = [
     "types",
     "pox",
     "zkt",
-    "util",
+    "util", "pom",
 ]
 
 resolver = "2"

@@ -1,7 +1,9 @@
 use crate::error::Error;
-use crate::{ip_packets, satellite_track};
+use crate::{ip_packets, p2p, satellite_track};
 use config::MySQLConfig;
-use sea_orm::{ColumnTrait, ConnectOptions, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectOptions, EntityTrait, QueryFilter, QueryOrder, Set,
+};
 use tracing::*;
 
 use super::prelude::*;
@@ -49,6 +51,43 @@ impl Db {
 }
 
 impl Db {
+    pub async fn upsert_p2p(
+        &self,
+        address: String,
+        multi_addr: String,
+        peer_id: String,
+    ) -> Result<(), Error> {
+        let record = p2p::ActiveModel {
+            address: Set(address.clone()),
+            peer_id: Set(peer_id),
+            multi_addr: Set(multi_addr),
+            ..Default::default()
+        };
+
+        match p2p::Entity::find_by_id(address.clone()).one(&self.db).await {
+            Ok(Some(_)) => match record.update(&self.db).await {
+                Ok(_) => Ok(()),
+                Err(err) => Err(Error::DbErr("update p2p error".to_string(), err)),
+            },
+            _ => match record.insert(&self.db).await {
+                Ok(_) => Ok(()),
+                Err(err) => Err(Error::DbErr("insert p2p error".to_string(), err)),
+            },
+        }
+    }
+    pub async fn find_p2p_by_address(&self, address: &str) -> Result<Option<p2p::Model>, Error> {
+        p2p::Entity::find_by_id(address.to_string())
+            .one(&self.db)
+            .await
+            .map_err(|e| Error::DbErr("find_p2p_by_address error".to_string(), e))
+    }
+    pub async fn remove_p2p_by_address(&self, address: &str) -> Result<(), Error> {
+        p2p::Entity::delete_by_id(address)
+            .exec(&self.db)
+            .await
+            .map_err(|e| Error::DbErr("remove_p2p_by_address error".to_string(), e))?;
+        Ok(())
+    }
     pub async fn find_all_satellite_track_with_single_satellite_block_from_to(
         &self,
         satellite_address: &str,
@@ -211,6 +250,38 @@ mod tests {
                 .await
                 .unwrap();
             info!("result len: {}", result.len());
+        } else {
+            panic!("cfg.da_layer should be MockDaLayerConfig");
+        }
+    }
+    #[tokio::test]
+    async fn test_db_p2p() {
+        let _guard = init_logger_for_test!();
+        let cfg = config::Config::new().unwrap();
+        if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
+            let db = Db::new(&cfg).await.unwrap();
+            let address = "test_address".to_string();
+            let multi_addr = "test_multi_addr".to_string();
+            let peer_id = "test_peer_id".to_string();
+            db.upsert_p2p(address.clone(), multi_addr.clone(), peer_id.clone())
+                .await
+                .unwrap();
+            let p2p = db.find_p2p_by_address(&address).await.unwrap().unwrap();
+            assert_eq!(p2p.address, address);
+            assert_eq!(p2p.multi_addr, multi_addr);
+            assert_eq!(p2p.peer_id, peer_id);
+            let multi_addr = "test_multi_addr2".to_string();
+            let peer_id = "test_peer_id2".to_string();
+            db.upsert_p2p(address.clone(), multi_addr.clone(), peer_id.clone())
+                .await
+                .unwrap();
+            let p2p = db.find_p2p_by_address(&address).await.unwrap().unwrap();
+            assert_eq!(p2p.address, address);
+            assert_eq!(p2p.multi_addr, multi_addr);
+            assert_eq!(p2p.peer_id, peer_id);
+            db.remove_p2p_by_address(&address).await.unwrap();
+            let p2p = db.find_p2p_by_address(&address).await.unwrap();
+            assert_eq!(p2p, None);
         } else {
             panic!("cfg.da_layer should be MockDaLayerConfig");
         }
