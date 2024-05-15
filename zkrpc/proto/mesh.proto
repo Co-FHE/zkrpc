@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package grpc.mesh.service;
+message InitMeshRequest {
+    string address = 1;
+    string privateKey = 2;
+}
+message InitMeshResponse {
+    bool success = 1; 
+}
+
+message MeshingRequest {
+    repeated string mesherAddresses = 1;
+}
+message MesshingProof{
+    string mesherAddress = 1;
+    string proof = 2;
+}
+message MeshingResponse {
+    repeated MesshingProof proofs = 1;
+}
+message VerifyMesheeRequest {
+    string mesheeAddress = 1;
+    string proof = 2;
+}
+message VerifyMesheeResponse {
+    bool success = 1;
+}
+service MeshService {
+rpc Init(InitMeshRequest) returns (InitMeshResponse); // if is satellite (whether is pending or active) run at the beginning of the program, if not initialized, panic
+rpc StartMeshee(MeshingRequest) returns (MeshingResponse); // start a new meshee / call by meshee / use context.Background() as context
+rpc VerifyMeshee(VerifyMesheeRequest) returns (VerifyMesheeResponse); // verify a meshee / call by meshers
+}

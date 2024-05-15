@@ -1,3 +1,4 @@
+mod mesh_rpc;
 mod rpc;
 // use anyhow::Result;
 use config::LogLevel;
@@ -63,7 +64,12 @@ async fn main() -> Result<()> {
                 .instrument(debug_span!("init_rpc"))
                 .await?;
             info!("zkRpcServer listening on {}", rpc_server.addr);
-            rpc_server.start().await?;
+            tonic::transport::Server::builder()
+                .add_service(pb::zk_service_server::ZkServiceServer::new(rpc_server))
+                // .add_service(pb::zk_service_server::ZkServiceServer::new(rpc_server))
+                .serve(format!("{}:{}", cfg.rpc.rpc_host, cfg.rpc.rpc_port).parse()?)
+                .await?;
+            // rpc_server.start().await?;
             Ok(())
         }
         Commands::Client(args) => {

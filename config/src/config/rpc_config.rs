@@ -7,6 +7,7 @@ pub struct RpcConfig {
     pub rpc_host: String,
     pub client_host: String,
     pub timeout: u64,
+    pub enable_mesh_rpc: bool,
 }
 impl Default for RpcConfig {
     fn default() -> Self {
@@ -15,6 +16,7 @@ impl Default for RpcConfig {
             rpc_host: "127.0.0.1".to_owned(),
             client_host: "127.0.0.1".to_owned(),
             timeout: 60,
+            enable_mesh_rpc: true,
         }
     }
 }

@@ -8,7 +8,7 @@ pub trait SerdeBinTrait: Sized + serde::Serialize + serde::de::DeserializeOwned 
     fn serialize_compress<C: CompressorTrait>(
         &self,
         cfg: &CompressorConfig,
-    ) -> color_eyre::Result<Vec<u8>> {
+    ) -> anyhow::Result<Vec<u8>> {
         let _span = debug_span!("serialize_compress").entered();
         let start_time = Instant::now();
         let data = bincode::serialize(&self)?;
@@ -29,7 +29,7 @@ pub trait SerdeBinTrait: Sized + serde::Serialize + serde::de::DeserializeOwned 
         );
         Ok(compressed_data)
     }
-    fn decompress_deserialize(data: &Vec<u8>, cfg: &CompressorConfig) -> color_eyre::Result<Self> {
+    fn decompress_deserialize(data: &Vec<u8>, cfg: &CompressorConfig) -> anyhow::Result<Self> {
         let _span = debug_span!("decompress_deserialize").entered();
         let start_time = Instant::now();
         if data.is_empty() {

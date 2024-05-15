@@ -111,7 +111,7 @@ impl default::Default for LogConfig {
         Self {
             format: LogFormat::OneLine,
             log_dir: PathBuf::from("logs"),
-            log_level: LogLevel::Trace,
+            log_level: LogLevel::Debug,
             show_source_location: true,
             show_thread_ids: false,
             show_thread_names: false,

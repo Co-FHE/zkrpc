@@ -63,9 +63,9 @@ pub fn initialize_logger(cfg: &LogConfig) -> WorkerGuard {
         } else {
             write!(
                 writer,
-                "{}={:?}",
+                "{}={}",
                 field.name().yellow(),
-                color_eyre::owo_colors::OwoColorize::italic(&value)
+                format!("{:?}", value).italic()
             )
         }
     })

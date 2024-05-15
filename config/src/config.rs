@@ -21,6 +21,8 @@ mod constants;
 use crate::error::Error;
 use colored::*;
 pub use compressor_config::*;
+mod p2p_config;
+pub use p2p_config::*;
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -29,6 +31,7 @@ pub struct Config {
     pub da_layer: DaLayerConfig,
     pub pox: PoxConfig,
     pub compressor: CompressorConfig,
+    pub p2p: P2PConfig,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -38,6 +41,7 @@ impl Default for Config {
             da_layer: DaLayerConfig::default(),
             pox: PoxConfig::default(),
             compressor: CompressorConfig::default(),
+            p2p: P2PConfig::default(),
         }
     }
 }

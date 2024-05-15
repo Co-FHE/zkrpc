@@ -9,13 +9,14 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::time::{timeout, Instant};
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::{Request, Response, Status};
 use tracing::{debug, debug_span, error, info, info_span, warn, Instrument};
 use types::{EndPointFrom, Satellite};
 use util::blockchain::address_brief;
 use util::compressor::BrotliCompressor;
 use util::serde_bin::SerdeBinTrait;
 use zkt::ZKT;
+
 #[derive(Debug, Clone)]
 pub struct ZkRpcServer {
     pub addr: String,
@@ -334,10 +335,11 @@ impl ZkRpcServer {
     }
     pub async fn start(&self) -> color_eyre::Result<()> {
         let t: ZkRpcServer = self.clone();
-        Server::builder()
+        tonic::transport::Server::builder()
             .add_service(pb::zk_service_server::ZkServiceServer::new(t))
             .serve(self.addr.parse()?)
             .await?;
         Ok(())
     }
+    
 }

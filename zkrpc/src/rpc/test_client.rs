@@ -28,6 +28,7 @@ mod test_client {
             rpc_port: 57392,
             client_host: "127.0.0.1".to_string(),
             timeout: 0,
+            enable_mesh_rpc: false,
         };
         rt.block_on(async {
             // Start the server
@@ -87,6 +88,7 @@ mod test_client {
             rpc_port: 57398,
             client_host: "127.0.0.1".to_string(),
             timeout: 1000,
+            enable_mesh_rpc: false,
         };
         rt.block_on(async {
             // Start the server
