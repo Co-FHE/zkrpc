@@ -1,27 +1,21 @@
 use config::BootstrapConfig;
 use libp2p::{
-    autonat,
     futures::StreamExt,
     gossipsub, identify,
-    identity::ed25519,
     multiaddr::Protocol,
-    noise, ping, rendezvous,
+    noise, rendezvous,
     swarm::{NetworkBehaviour, SwarmEvent},
     tcp, yamux, Multiaddr,
 };
-use std::error::Error;
-use std::hash::{Hash, Hasher};
-use std::ops::Mul;
-use std::time::Duration;
-use std::{collections::hash_map::DefaultHasher, io};
+use std::{
+    hash::{DefaultHasher, Hash, Hasher},
+    time::Duration,
+};
 use tokio::time;
-use tokio::{io as tio, io::AsyncBufReadExt, select};
-use tracing::debug;
 #[derive(NetworkBehaviour)]
 struct RegisterBehaviour {
     identify: identify::Behaviour,
     rendezvous: rendezvous::client::Behaviour,
-    gossipsub: gossipsub::Behaviour,
 }
 pub(crate) async fn bootstrap_identify_registry(cfg: &BootstrapConfig) {
     let rendezvous_point_address = format!("/ip4/127.0.0.1/tcp/{}", cfg.bootstrap_port)
@@ -29,26 +23,6 @@ pub(crate) async fn bootstrap_identify_registry(cfg: &BootstrapConfig) {
         .unwrap();
     let key = libp2p::identity::Keypair::ed25519_from_bytes(cfg.fixed_seed.unwrap()).unwrap();
     let rendezvous_point = key.public().to_peer_id();
-    let message_id_fn = |message: &gossipsub::Message| {
-        let mut s = DefaultHasher::new();
-        message.data.hash(&mut s);
-        gossipsub::MessageId::from(s.finish().to_string())
-    };
-
-    // Set a custom gossipsub configuration
-    let gossipsub_config = gossipsub::ConfigBuilder::default()
-        .heartbeat_interval(Duration::from_secs(10)) // This is set to aid debugging by not cluttering the log space
-        .validation_mode(gossipsub::ValidationMode::Strict) // This sets the kind of message validation. The default is Strict (enforce message signing)
-        .message_id_fn(message_id_fn) // content-address messages. No two messages of the same content will be propagated.
-        .build()
-        .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg)); // Temporary hack because `build` does not return a proper `std::error::Error`.
-
-    // build a gossipsub network behaviour
-    let gossipsub = gossipsub::Behaviour::new(
-        gossipsub::MessageAuthenticity::Signed(key.clone()),
-        gossipsub_config.unwrap(),
-    )
-    .unwrap();
     let mut swarm = libp2p::SwarmBuilder::with_new_identity()
         .with_tokio()
         .with_tcp(
@@ -63,7 +37,6 @@ pub(crate) async fn bootstrap_identify_registry(cfg: &BootstrapConfig) {
                 key.public(),
             )),
             rendezvous: rendezvous::client::Behaviour::new(key.clone()),
-            gossipsub,
         })
         .unwrap()
         .with_swarm_config(|cfg| cfg.with_idle_connection_timeout(Duration::from_secs(5)))
@@ -71,7 +44,6 @@ pub(crate) async fn bootstrap_identify_registry(cfg: &BootstrapConfig) {
 
     let mut cookie = None;
     let _ = swarm.listen_on("/ip4/0.0.0.0/tcp/15867".parse().unwrap());
-    let topic = gossipsub::IdentTopic::new("forward");
     loop {
         if let Err(err) = swarm.dial(rendezvous_point_address.clone()) {
             tracing::error!("Failed to dial rendezvous point: {:?}", err);
@@ -97,27 +69,6 @@ pub(crate) async fn bootstrap_identify_registry(cfg: &BootstrapConfig) {
                     identify::Event::Received { peer_id, info },
                 )) => {
                     if peer_id != rendezvous_point {
-                        continue;
-                    }
-                    swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
-                    debug!("add_explicit_peer, peer_id: {:?}", peer_id);
-                    debug!(
-                        "all_peers: {:?}",
-                        swarm
-                            .behaviour_mut()
-                            .gossipsub
-                            .all_peers()
-                            .collect::<Vec<_>>()
-                    );
-                    let r = swarm
-                        .behaviour_mut()
-                        .gossipsub
-                        .publish(topic.clone(), "123".as_bytes())
-                        .map_err(|e| {
-                            tracing::error!("publish error: {:?}", e);
-                            e
-                        });
-                    if let Err(e) = r {
                         continue;
                     }
                     tracing::info!("Identified as {}, info {:?}", peer_id, info);
@@ -203,16 +154,6 @@ pub(crate) async fn bootstrap_identify_registry(cfg: &BootstrapConfig) {
                     );
                     break;
                 }
-                SwarmEvent::Behaviour(RegisterBehaviourEvent::Gossipsub(
-                    gossipsub::Event::Message {
-                        propagation_source: peer_id,
-                        message_id: id,
-                        message,
-                    },
-                )) => println!(
-                    "Got message: '{}' with id: {id} from peer: {peer_id}",
-                    String::from_utf8_lossy(&message.data),
-                ),
                 // SwarmEvent::Behaviour(MyBehaviourEvent::Ping(ping::Behaviour::Event {
                 //     peer,
                 //     result: Ok(rtt),
@@ -245,7 +186,7 @@ struct MyBehaviour {
 }
 //cargo test --package p2p --lib -- bootstrap::client::aaa --exact --show-output
 #[tokio::test]
-pub async fn aaa() -> Result<(), anyhow::Error> {
+pub async fn test_gossip_client() -> Result<(), anyhow::Error> {
     let _guard = logger::init_logger_for_test!();
     let mut swarm = libp2p::SwarmBuilder::with_new_identity()
         .with_tokio()

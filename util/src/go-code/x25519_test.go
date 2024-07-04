@@ -11,10 +11,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 )
 
-// ed25519库 github.com/cometbft/cometbft/crypto/ed25519
-// ed25519 节点Validator私钥 44da02ea3d3829415ff1175467c5f1cf9e3b4b90ef740758e2d9bccbb2520b1971492d9da0d7c2f82bc28b18ee17a34a58656963e022cf1d43143ca788f81510
-// 公钥 71492d9da0d7c2f82bc28b18ee17a34a58656963e022cf1d43143ca788f81510
-// 卫星用这个 公钥就可以找到卫星，卫星列表 有公钥信息
+// ed25519 lib github.com/cometbft/cometbft/crypto/ed25519
+// ed25519 private_key 44da02ea3d3829415ff1175467c5f1cf9e3b4b90ef740758e2d9bccbb2520b1971492d9da0d7c2f82bc28b18ee17a34a58656963e022cf1d43143ca788f81510
+// public_key 71492d9da0d7c2f82bc28b18ee17a34a58656963e022cf1d43143ca788f81510
 func TestAddr(t *testing.T) {
 	tmPriv := "44da02ea3d3829415ff1175467c5f1cf9e3b4b90ef740758e2d9bccbb2520b1971492d9da0d7c2f82bc28b18ee17a34a58656963e022cf1d43143ca788f81510"
 	b, _ := hex.DecodeString(tmPriv)
@@ -22,7 +21,7 @@ func TestAddr(t *testing.T) {
 	pubkey := priv.PubKey()
 	fmt.Println("pubkey: ", hex.EncodeToString(pubkey.Bytes()))
 	address := priv.PubKey().Address()
-	fmt.Println("原始地址", address)
+	fmt.Println("original address", address)
 
 	prefix := "space"
 	conf := types.GetConfig()
@@ -37,19 +36,16 @@ func TestAddr(t *testing.T) {
 			panic(err)
 		}
 
-		fmt.Println("Bench32地址", i, bech32Addr)
+		fmt.Println("Bench32 address", i, bech32Addr)
 	}
 
 	msg := []byte("needsignmessage")
 	h := sha256.Sum256(msg)
 	signData, _ := priv.Sign(h[:])
-	fmt.Println("签名数据:", hex.EncodeToString(signData))
+	fmt.Println("signature:", hex.EncodeToString(signData))
 
-	// 公钥 验证
-	// 需要 msg 以及公钥
-	// 对msg 进行一次hash操作
 	r := pubkey.VerifySignature(h[:], signData)
-	fmt.Println("签名数据验证结果:", r)
+	fmt.Println("verification result:", r)
 }
 
 func bech32Prefixes(config *types.Config) []string {

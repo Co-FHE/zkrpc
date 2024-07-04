@@ -377,7 +377,7 @@ mod tests {
     #[test]
     // #[cfg(not(debug_assertions))]
     fn test_pod_benchmark() {
-        const N: usize = 1000;
+        const N: usize = 5000;
         let _guard = init_logger_for_test!();
         use crate::PoX;
         use config::PoxConfig;
@@ -560,8 +560,8 @@ mod tests {
     #[test]
     fn test_pof_benchmark() {
         let _guard = init_logger_for_test!();
-        const N: usize = 10000;
-        const PSIZE: usize = 5000;
+        const N: usize = 1000;
+        const PSIZE: usize = 512;
         let cfg = PoxConfig::default();
         let satellite = Satellite::<Decimal> {
             terminals: (0..N)
