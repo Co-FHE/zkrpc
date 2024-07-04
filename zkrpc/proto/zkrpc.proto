@@ -4,7 +4,7 @@ package grpc.zkrpc.service;
 
 message ZkGenProofRequest {
   string proverAddress = 1;
-  string satelliteAddress = 2;
+  string remoteAddress = 2;
   uint64 epochForProof = 3;
   uint64 blockHeightFromForProof = 4;
   uint64 blockHeightToForProof = 5;
@@ -20,15 +20,15 @@ message ZkGenProofResponse {
   string alphaProofMerkleRoot = 1;
   string betaProofMerkleRoot = 2;
   // hashmap of terminal address and its weight
-  uint64 satelliteAlphaWeight = 3;
-  uint64 satelliteBetaWeight = 4;
+  uint64 remoteAlphaWeight = 3;
+  uint64 remoteBetaWeight = 4;
   repeated ZkWeight terminalWeights = 8;
   // map<string, ZkWeight> terminalWeights = 5;
 }
 
 message ZkVerifyProofRequest {
   string proverAddress = 1;
-  string satelliteAddress = 2;
+  string remoteAddress = 2;
   uint64 epochForProof = 3;
   uint64 blockHeightFromForProof = 4;
   uint64 blockHeightToForProof = 5;

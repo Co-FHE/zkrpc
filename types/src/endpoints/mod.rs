@@ -1,8 +1,8 @@
 mod terminal;
 use config::PoxConfig;
 pub use terminal::*;
-mod satellite;
-pub use satellite::*;
+mod remote;
+pub use remote::*;
 
 mod packets;
 pub use packets::*;

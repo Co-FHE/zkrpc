@@ -4,7 +4,7 @@ pub mod prelude;
 
 pub mod ip_packets;
 pub mod p2p;
-pub mod satellite;
-pub mod satellite_track;
+pub mod remote;
+pub mod remote_track;
 pub mod terminal;
 pub mod terminal_track;

@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::{ip_packets, p2p, satellite_track};
+use crate::{ip_packets, p2p, remote_track};
 use config::MySQLConfig;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectOptions, EntityTrait, QueryFilter, QueryOrder, Set,
@@ -88,37 +88,36 @@ impl Db {
             .map_err(|e| Error::DbErr("remove_p2p_by_address error".to_string(), e))?;
         Ok(())
     }
-    pub async fn find_all_satellite_track_with_single_satellite_block_from_to(
+    pub async fn find_all_remote_track_with_single_remote_block_from_to(
         &self,
-        satellite_address: &str,
+        remote_address: &str,
         block_height_from: u64,
         block_height_to: u64,
-    ) -> Result<Vec<satellite_track::Model>, Error> {
-        satellite_track::Entity::find()
-            .filter(satellite_track::Column::BlockNumber.lte(block_height_to))
-            .filter(satellite_track::Column::BlockNumber.gte(block_height_from))
-            .filter(satellite_track::Column::ValidatorAddress.eq(satellite_address))
-            .order_by_asc(satellite_track::Column::BlockNumber)
+    ) -> Result<Vec<remote_track::Model>, Error> {
+        remote_track::Entity::find()
+            .filter(remote_track::Column::BlockNumber.lte(block_height_to))
+            .filter(remote_track::Column::BlockNumber.gte(block_height_from))
+            .filter(remote_track::Column::ValidatorAddress.eq(remote_address))
+            .order_by_asc(remote_track::Column::BlockNumber)
             .all(&self.db)
             .await
             .map_err(|e| {
                 Error::DbErr(
-                    "find_all_satellite_track_with_single_statellite_block_from_to error"
-                        .to_string(),
+                    "find_all_remote_track_with_single_statellite_block_from_to error".to_string(),
                     e,
                 )
             })
     }
-    pub async fn find_all_terminal_track_with_single_satellite_block_from_to(
+    pub async fn find_all_terminal_track_with_single_remote_block_from_to(
         &self,
-        satellite_address: &str,
+        remote_address: &str,
         block_height_from: u64,
         block_height_to: u64,
     ) -> Result<Vec<terminal_track::Model>, Error> {
         let terminals = TerminalTrack::find()
             .filter(terminal_track::Column::BlockNumber.lte(block_height_to))
             .filter(terminal_track::Column::BlockNumber.gte(block_height_from))
-            .filter(terminal_track::Column::SatelliteValidatorAddress.eq(satellite_address))
+            .filter(terminal_track::Column::RemoteValidatorAddress.eq(remote_address))
             // .inner_join(terminal::Entity)
             // .find_also_related(Terminal)
             // .join(
@@ -133,7 +132,7 @@ impl Db {
             .await
             .map_err(|e| {
                 Error::DbErr(
-                    "find_all_terminal_track_with_single_satellite_block_from_to error".to_string(),
+                    "find_all_terminal_track_with_single_remote_block_from_to error".to_string(),
                     e,
                 )
             })?
@@ -142,17 +141,17 @@ impl Db {
 
         Ok(terminals)
     }
-    pub async fn find_all_ip_packets_with_single_satellite_block_from_to(
+    pub async fn find_all_ip_packets_with_single_remote_block_from_to(
         &self,
-        satellite_address: &str,
+        remote_address: &str,
         block_height_from: u64,
         block_height_to: u64,
     ) -> Result<Vec<ip_packets::Model>, Error> {
         let ip_packets = IpPackets::find()
             .filter(ip_packets::Column::BlockNumber.lte(block_height_to))
             .filter(ip_packets::Column::BlockNumber.gte(block_height_from))
-            // TODO: use satellite_address
-            .filter(ip_packets::Column::SatelliteValidatorAddress.eq(satellite_address))
+            // TODO: use remote_address
+            .filter(ip_packets::Column::RemoteValidatorAddress.eq(remote_address))
             // .inner_join(terminal::Entity)
             // .join(
             //     JoinType::InnerJoin,
@@ -166,7 +165,7 @@ impl Db {
             .await
             .map_err(|e| {
                 Error::DbErr(
-                    "find_all_ip_packets_with_single_satellite_block_from_to error".to_string(),
+                    "find_all_ip_packets_with_single_remote_block_from_to error".to_string(),
                     e,
                 )
             })?;
@@ -193,14 +192,14 @@ mod tests {
     }
     #[tokio::test]
     // #[cfg(exclude)]
-    async fn test_db_find_all_satellite_track_with_single_satellite_block_from_to() {
+    async fn test_db_find_all_remote_track_with_single_remote_block_from_to() {
         let _guard = init_logger_for_test!();
 
         let cfg = config::Config::new().unwrap();
         if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
             let db = Db::new(&cfg).await.unwrap();
             let result = db
-                .find_all_satellite_track_with_single_satellite_block_from_to(
+                .find_all_remote_track_with_single_remote_block_from_to(
                     "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch",
                     0,
                     500715,
@@ -214,14 +213,14 @@ mod tests {
     }
     #[tokio::test]
     // #[cfg(exclude)]
-    async fn test_db_find_all_terminal_track_with_single_satellite_block_from_to() {
+    async fn test_db_find_all_terminal_track_with_single_remote_block_from_to() {
         let _guard = init_logger_for_test!();
 
         let cfg = config::Config::new().unwrap();
         if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
             let db = Db::new(&cfg).await.unwrap();
             let result = db
-                .find_all_terminal_track_with_single_satellite_block_from_to(
+                .find_all_terminal_track_with_single_remote_block_from_to(
                     "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch",
                     0,
                     500715,
@@ -235,14 +234,14 @@ mod tests {
     }
     #[tokio::test]
     // #[cfg(exclude)]
-    async fn test_db_find_all_ip_packets_with_single_satellite_block_from_to() {
+    async fn test_db_find_all_ip_packets_with_single_remote_block_from_to() {
         let _guard = init_logger_for_test!();
 
         let cfg = config::Config::new().unwrap();
         if let config::DaLayerConfig::MockDaLayerConfig(cfg) = cfg.da_layer {
             let db = Db::new(&cfg).await.unwrap();
             let result = db
-                .find_all_ip_packets_with_single_satellite_block_from_to(
+                .find_all_ip_packets_with_single_remote_block_from_to(
                     "6C:AC:B2:55:09:A5",
                     180000,
                     500715,

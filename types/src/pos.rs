@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use rust_decimal::Decimal;
 
-use crate::{Error, FixedPoint, FixedPointDecimal, FixedPointInteger, Satellite, Terminal};
+use crate::{Error, FixedPoint, FixedPointDecimal, FixedPointInteger, Remote, Terminal};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pos2D<T: FixedPoint> {
     pub x: T,
@@ -129,7 +129,7 @@ impl<T: FixedPoint> GetPos2D for Terminal<T> {
     }
 }
 
-impl<T: FixedPoint> GetPos2D for Satellite<T> {
+impl<T: FixedPoint> GetPos2D for Remote<T> {
     type BaseType = T;
     fn get_pos_2d(&self) -> Pos2D<T> {
         Pos2D {

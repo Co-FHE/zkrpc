@@ -27,7 +27,7 @@ message VerifyMesheeResponse {
     bool success = 1;
 }
 service MeshService {
-rpc Init(InitMeshRequest) returns (InitMeshResponse); // if is satellite (whether is pending or active) run at the beginning of the program, if not initialized, panic
+rpc Init(InitMeshRequest) returns (InitMeshResponse); // if is remote (whether is pending or active) run at the beginning of the program, if not initialized, panic
 rpc StartMeshee(MeshingRequest) returns (MeshingResponse); // start a new meshee / call by meshee / use context.Background() as context
 rpc VerifyMeshee(VerifyMesheeRequest) returns (VerifyMesheeResponse); // verify a meshee / call by meshers
 }

@@ -33,7 +33,7 @@ pub(crate) async fn bootstrap_identify_registry(cfg: &BootstrapConfig) {
         .unwrap()
         .with_behaviour(|key| RegisterBehaviour {
             identify: identify::Behaviour::new(identify::Config::new(
-                "satellite_node/1.0.0".to_string(),
+                "remote_node/1.0.0".to_string(),
                 key.public(),
             )),
             rendezvous: rendezvous::client::Behaviour::new(key.clone()),

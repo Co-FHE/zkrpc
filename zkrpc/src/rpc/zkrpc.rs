@@ -4,14 +4,14 @@ pub mod pb {
 use config::Config;
 use da_layer::{ DaLayerTrait, MockLocalDB};
 use pb::*;
-use pox::{PoDSatelliteResult, PoFSatelliteResult};
+use pox::{PoDRemoteResult, PoFRemoteResult};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::time::{timeout, Instant};
 use tonic::{Request, Response, Status};
 use tracing::{debug, debug_span, error, info, info_span, warn, Instrument};
-use types::{EndPointFrom, Satellite};
+use types::{EndPointFrom, Remote};
 use util::blockchain::address_brief;
 use util::compressor::BrotliCompressor;
 use util::serde_bin::SerdeBinTrait;
@@ -35,7 +35,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             .map_or("unknow".to_string(), |addr| addr.ip().to_string());
         let zk_request = request.into_inner();
         let prover_address = zk_request.prover_address.clone();
-        let satellite_address = zk_request.satellite_address.clone();
+        let remote_address = zk_request.remote_address.clone();
         let epoch_for_proof = zk_request.epoch_for_proof;
         let block_height_from_for_proof = zk_request.block_height_from_for_proof;
         let block_height_to_for_proof = zk_request.block_height_to_for_proof;
@@ -44,46 +44,46 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             info!(message = "!!!!!!!!!!!!!!!!!!!  Received zk proof !!!!!!!!!!!!!!!!!!!");
             let start_time = Instant::now();
             debug!(message = "start fetching data from DA-layer");
-            let satellite_address = zk_request.satellite_address;
+            let remote_address = zk_request.remote_address;
             let fetch_start_time = Instant::now();
-            let mut satellite = self
+            let mut remote = self
                 .db
-                .fetch_satellite_with_terminals_block_from_to(
-                    satellite_address.as_ref(),
+                .fetch_remote_with_terminals_block_from_to(
+                    remote_address.as_ref(),
                     block_height_from_for_proof as u64,
                     block_height_to_for_proof as u64,
                 )
-                .instrument(debug_span!("fetch_satellite_with_terminals_block_from_to"))
+                .instrument(debug_span!("fetch_remote_with_terminals_block_from_to"))
                 .await
                 .map_err(|e| Status::internal(e.to_string()))?;
             let fetch_time = fetch_start_time.elapsed();
             debug!(
                 message = "data fetched from DA-layer",
-                block_found = satellite.len(),
+                block_found = remote.len(),
                 ?fetch_time
             );
-            let block_heights = satellite.iter().map(|(k, _)| k).collect::<Vec<_>>();
+            let block_heights = remote.iter().map(|(k, _)| k).collect::<Vec<_>>();
             debug!(block_heights = ?block_heights);
-            satellite.sort_by(|a, b| a.0.cmp(&b.0));
-            if satellite.is_empty() {
-                return Err(Status::data_loss("No satellite found"));
+            remote.sort_by(|a, b| a.0.cmp(&b.0));
+            if remote.is_empty() {
+                return Err(Status::data_loss("No remote found"));
             }
-            let satellite = satellite[0].1.clone();
+            let remote = remote[0].1.clone();
             debug!(
-                message = "use the satellite with min height, start evaluating PoD",
-                blocknum = satellite.epoch,
-                terminal_num = satellite.terminals.len(),
-                address = address_brief(&satellite.address),
-                position = ?satellite.position,
+                message = "use the remote with min height, start evaluating PoD",
+                blocknum = remote.epoch,
+                terminal_num = remote.terminals.len(),
+                address = address_brief(&remote.address),
+                position = ?remote.position,
 
             );
-            let satellite = Satellite::from_with_config(satellite, &self.cfg.pox).map_err(|e| {
-                Status::internal(format!("Error converting Satellite: {}", e.to_string()))
+            let remote = Remote::from_with_config(remote, &self.cfg.pox).map_err(|e| {
+                Status::internal(format!("Error converting Remote: {}", e.to_string()))
             })?;
-            let terminals_num = satellite.terminals.len();
+            let terminals_num = remote.terminals.len();
             let zkp = ZKT {};
 
-            let pox = pox::PoX::new(satellite, zkp, &self.cfg.pox)
+            let pox = pox::PoX::new(remote, zkp, &self.cfg.pox)
                 .map_err(|e| Status::internal(format!("Error creating PoX: {}", e.to_string())))?;
 
             let pod_start_time = Instant::now();
@@ -123,15 +123,15 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             let response = ZkGenProofResponse {
                 alpha_proof_merkle_root: hex::encode(pod_s),
                 beta_proof_merkle_root: hex::encode(pof_s),
-                satellite_alpha_weight: pod.score.to_string().parse::<u64>().map_err(|e| {
+                remote_alpha_weight: pod.score.to_string().parse::<u64>().map_err(|e| {
                     Status::internal(format!(
-                        "Error parsing satellite_alpha_weight: {}",
+                        "Error parsing remote_alpha_weight: {}",
                         e.to_string()
                     ))
                 })?,
-                satellite_beta_weight: pof.value.to_string().parse::<u64>().map_err(|e| {
+                remote_beta_weight: pof.value.to_string().parse::<u64>().map_err(|e| {
                     Status::internal(format!(
-                        "Error parsing satellite_beta_weight: {}",
+                        "Error parsing remote_beta_weight: {}",
                         e.to_string()
                     ))
                 })?,
@@ -178,7 +178,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         .instrument(info_span!(
             "gen_proof",
             ip,
-            s_addr = address_brief(&satellite_address),
+            s_addr = address_brief(&remote_address),
             prover = address_brief(&prover_address),
             epoch = epoch_for_proof,
             from = block_height_from_for_proof,
@@ -202,7 +202,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
             .map_or("unknow".to_string(), |addr| addr.ip().to_string());
         let zk_request = request.into_inner();
         let prover_address = zk_request.prover_address.clone();
-        let satellite_address = zk_request.satellite_address.clone();
+        let remote_address = zk_request.remote_address.clone();
         let epoch_for_proof = zk_request.epoch_for_proof;
         let block_height_from_for_proof = zk_request.block_height_from_for_proof;
         let block_height_to_for_proof = zk_request.block_height_to_for_proof;
@@ -228,11 +228,11 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
                     e.to_string()
                 ))
             })?;
-            let pod = PoDSatelliteResult::decompress_deserialize(&pod_s, &self.cfg.compressor)
+            let pod = PoDRemoteResult::decompress_deserialize(&pod_s, &self.cfg.compressor)
                 .map_err(|e| {
                     Status::internal(format!("Error deserializing PoD: {}", e.to_string()))
                 })?;
-            let pof = PoFSatelliteResult::decompress_deserialize(&pof_s, &self.cfg.compressor)
+            let pof = PoFRemoteResult::decompress_deserialize(&pof_s, &self.cfg.compressor)
                 .map_err(|e| {
                     Status::internal(format!("Error deserializing PoF: {}", e.to_string()))
                 })?;
@@ -304,7 +304,7 @@ impl pb::zk_service_server::ZkService for ZkRpcServer {
         .instrument(info_span!(
             "verify_proof",
             ip,
-            s_addr = %address_brief(&satellite_address),
+            s_addr = %address_brief(&remote_address),
             prover = %address_brief(&prover_address),
             epoch = epoch_for_proof,
             from = block_height_from_for_proof,

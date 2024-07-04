@@ -3,14 +3,14 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
-#[sea_orm(table_name = "satellite_track")]
+#[sea_orm(table_name = "remote_track")]
 pub struct Model {
-    pub satellite_mac: String,
+    pub remote_mac: String,
     pub block_number: i32,
     #[sea_orm(column_type = "Float")]
-    pub latitude: f32,
+    pub y: f32,
     #[sea_orm(column_type = "Float")]
-    pub longitude: f32,
+    pub x: f32,
     #[sea_orm(column_type = "Float")]
     pub height: f32,
     #[sea_orm(column_type = "Float")]

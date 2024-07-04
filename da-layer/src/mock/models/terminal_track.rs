@@ -6,7 +6,7 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "terminal_track")]
 pub struct Model {
     pub block_number: i32,
-    pub satellite_mac: String,
+    pub remote_mac: String,
     pub terminal_mac: String,
     #[sea_orm(column_type = "Float")]
     pub signal_strength: f32,
@@ -17,13 +17,13 @@ pub struct Model {
     pub net_latency: i32,
     pub droped_ip_packets: Option<String>,
     pub terminal_address: String,
-    pub satellite_validator_address: String,
+    pub remote_validator_address: String,
     #[sea_orm(primary_key)]
     pub id: i64,
     #[sea_orm(column_type = "Float")]
-    pub latitude: f32,
+    pub y: f32,
     #[sea_orm(column_type = "Float")]
-    pub longitude: f32,
+    pub x: f32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

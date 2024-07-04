@@ -5,14 +5,14 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "ip_packets")]
 pub struct Model {
-    pub satellite_mac: String,
+    pub remote_mac: String,
     pub block_number: i32,
     pub ip_sequence: i32,
     #[sea_orm(column_type = "Binary(BlobSize::Blob(Some(100)))")]
     pub ip_packet_data: Vec<u8>,
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub satellite_validator_address: String,
+    pub remote_validator_address: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

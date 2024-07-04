@@ -13,13 +13,13 @@ mod tests {
     use rust_decimal::{prelude::Zero, Decimal};
     use rust_decimal_macros::dec;
     use tracing::{debug, info};
-    use types::{Alpha, CompletePackets, EndPointFrom, Packet, Pos2D, Satellite};
+    use types::{Alpha, CompletePackets, EndPointFrom, Packet, Pos2D, Remote};
     use util::{compressor::BrotliCompressor, serde_bin::SerdeBinTrait};
     use zkt::ZkTraitHalo2;
 
     use crate::{
-        Gaussian, GaussianTaylor, Kernel, KernelKind, PoDSatelliteResult, PoDTerminalResult,
-        PoFSatelliteResult, PoFVerify, PoX, PosTrait,
+        Gaussian, GaussianTaylor, Kernel, KernelKind, PoDRemoteResult, PoDTerminalResult,
+        PoFRemoteResult, PoFVerify, PoX, PosTrait,
     };
 
     struct TestZK {}
@@ -96,7 +96,7 @@ mod tests {
         let _guard = init_logger_for_test!();
         use crate::PoX;
         use config::PoxConfig;
-        use types::{Alpha, FixedPoint, Satellite};
+        use types::{Alpha, FixedPoint, Remote};
         let mut cfg = PoxConfig {
             rayon_num_threads: 0,
             kernel: KernelConfig {
@@ -118,7 +118,7 @@ mod tests {
             coordinate_precision_bigint: 3,
             pod_max_value: dec!(-100),
         };
-        let satellite = Satellite::<Decimal> {
+        let remote = Remote::<Decimal> {
             terminals: vec![
                 types::Terminal {
                     address: "0x1".to_string(),
@@ -166,7 +166,7 @@ mod tests {
                     },
                 },
             ],
-            satellite_packets: None,
+            remote_packets: None,
             epoch: 1,
             address: "0x123456".to_string(),
             position: types::Pos3D {
@@ -175,13 +175,13 @@ mod tests {
                 height: dec!(10000),
             },
         };
-        let satellite_decimal = satellite.clone();
-        let satellite = Satellite::from_with_config(satellite, &cfg).unwrap();
-        let ss = satellite_decimal
+        let remote_decimal = remote.clone();
+        let remote = Remote::from_with_config(remote, &cfg).unwrap();
+        let ss = remote_decimal
             .terminals
             .iter()
             .map(|t| {
-                let weight: Decimal = satellite_decimal
+                let weight: Decimal = remote_decimal
                     .terminals
                     .iter()
                     .map(|t2| {
@@ -193,7 +193,7 @@ mod tests {
                         }
                     })
                     .sum();
-                let total: Decimal = satellite_decimal
+                let total: Decimal = remote_decimal
                     .terminals
                     .iter()
                     .map(|t2| {
@@ -224,56 +224,56 @@ mod tests {
             / ss.iter().map(|(_, d)| d).sum::<Decimal>()
             + dec!(100);
         debug!("Reference: value = {}", sv);
-        let required_result = PoDSatelliteResult::<BigInt> {
+        let required_result = PoDRemoteResult::<BigInt> {
             score: BigInt::from(384606),
             terminal_results: vec![
                 PoDTerminalResult {
                     terminal_address: "0x1".to_string(),
                     weight: BigInt::from(123158),
-                    value_for_satellite: BigInt::from(-623157),
+                    value_for_remote: BigInt::from(-623157),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x2".to_string(),
                     weight: BigInt::from(30233),
-                    value_for_satellite: BigInt::from(-630232),
+                    value_for_remote: BigInt::from(-630232),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x3".to_string(),
                     weight: BigInt::from(0),
-                    value_for_satellite: BigInt::from(-614102),
+                    value_for_remote: BigInt::from(-614102),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x4".to_string(),
                     weight: BigInt::from(183871),
-                    value_for_satellite: BigInt::from(-616129),
+                    value_for_remote: BigInt::from(-616129),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x5".to_string(),
                     weight: BigInt::from(100000),
-                    value_for_satellite: BigInt::from(-600000),
+                    value_for_remote: BigInt::from(-600000),
                     proof: (Vec::new(), Vec::new()),
                 },
             ],
         };
-        let pox = PoX::new(satellite.clone(), TestZK {}, &cfg).unwrap();
+        let pox = PoX::new(remote.clone(), TestZK {}, &cfg).unwrap();
         if let KernelKind::Quadratic(kernel) = &pox.kernel {
             assert_eq!(kernel.max_dis_sqr, BigInt::from(25_000_000));
             assert_eq!(pox.penalty.max_diff, BigInt::from(200_000));
             let pod_result = pox.eval_pod();
             assert_eq!(required_result, pod_result);
             assert_eq!(
-                PoDSatelliteResult::decompress_deserialize(
+                PoDRemoteResult::decompress_deserialize(
                     &pod_result
                         .serialize_compress::<BrotliCompressor>(&CompressorConfig::default())
                         .unwrap(),
                     &CompressorConfig::default()
                 )
                 .unwrap(),
-                PoDSatelliteResult::decompress_deserialize(
+                PoDRemoteResult::decompress_deserialize(
                     &required_result
                         .serialize_compress::<BrotliCompressor>(&CompressorConfig::default())
                         .unwrap(),
@@ -285,7 +285,7 @@ mod tests {
             panic!("KernelKind is not Quadratic")
         }
         cfg.kernel.kernel_type = KernelTypeConfig::GaussianTaylor;
-        let pox = PoX::new(satellite.clone(), TestZK {}, &cfg).unwrap();
+        let pox = PoX::new(remote.clone(), TestZK {}, &cfg).unwrap();
         if let KernelKind::GaussianTaylor(kernel) = &pox.kernel {
             assert_eq!(kernel.sigma_sqr, BigInt::from(4000000));
             assert_eq!(kernel.implement_params.max_order, 1);
@@ -303,10 +303,7 @@ mod tests {
             for j in 0..5 {
                 hm.insert(
                     (i, j),
-                    kernel.eval_numer(
-                        &satellite.terminals[i].position,
-                        &satellite.terminals[j].position,
-                    ),
+                    kernel.eval_numer(&remote.terminals[i].position, &remote.terminals[j].position),
                 );
             }
         }
@@ -337,37 +334,37 @@ mod tests {
         assert_eq!(hm[&(4, 4)], BigInt::from(8000000));
         let pod_result = pox.eval_pod();
 
-        let required_result = PoDSatelliteResult::<BigInt> {
+        let required_result = PoDRemoteResult::<BigInt> {
             score: BigInt::from(399834),
             terminal_results: vec![
                 PoDTerminalResult {
                     terminal_address: "0x1".to_string(),
                     weight: BigInt::from(173685),
-                    value_for_satellite: BigInt::from(-673684),
+                    value_for_remote: BigInt::from(-673684),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x2".to_string(),
                     weight: BigInt::from(94445),
-                    value_for_satellite: BigInt::from(-694444),
+                    value_for_remote: BigInt::from(-694444),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x3".to_string(),
                     weight: BigInt::from(40000),
-                    value_for_satellite: BigInt::from(-560000),
+                    value_for_remote: BigInt::from(-560000),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x4".to_string(),
                     weight: BigInt::from(200000),
-                    value_for_satellite: BigInt::from(-600000),
+                    value_for_remote: BigInt::from(-600000),
                     proof: (Vec::new(), Vec::new()),
                 },
                 PoDTerminalResult {
                     terminal_address: "0x5".to_string(),
                     weight: BigInt::from(200000),
-                    value_for_satellite: BigInt::from(-500000),
+                    value_for_remote: BigInt::from(-500000),
                     proof: (Vec::new(), Vec::new()),
                 },
             ],
@@ -381,9 +378,9 @@ mod tests {
         let _guard = init_logger_for_test!();
         use crate::PoX;
         use config::PoxConfig;
-        use types::{Alpha, Satellite};
+        use types::{Alpha, Remote};
         let cfg = PoxConfig::default();
-        let satellite = Satellite::<Decimal> {
+        let remote = Remote::<Decimal> {
             terminals: (0..N)
                 .map(|i| {
                     types::Terminal {
@@ -399,7 +396,7 @@ mod tests {
                 })
                 .collect(),
 
-            satellite_packets: None,
+            remote_packets: None,
             epoch: 1,
             address: "0x123456".to_string(),
             position: types::Pos3D {
@@ -408,8 +405,8 @@ mod tests {
                 height: dec!(10000),
             },
         };
-        let satellite = Satellite::from_with_config(satellite, &cfg).unwrap();
-        let pox = PoX::new(satellite, TestZK {}, &cfg).unwrap();
+        let remote = Remote::from_with_config(remote, &cfg).unwrap();
+        let pox = PoX::new(remote, TestZK {}, &cfg).unwrap();
         let pod_result = pox.eval_pod();
         assert_eq!(pod_result.terminal_results.len(), N);
     }
@@ -418,7 +415,7 @@ mod tests {
     fn test_pof() {
         let _guard = init_logger_for_test!();
         let cfg = PoxConfig::default();
-        let satellite = Satellite::<Decimal> {
+        let remote = Remote::<Decimal> {
             terminals: vec![
                 types::Terminal {
                     address: "0x1".to_string(),
@@ -505,7 +502,7 @@ mod tests {
                     },
                 },
             ],
-            satellite_packets: Some(CompletePackets {
+            remote_packets: Some(CompletePackets {
                 data: vec![
                     Packet {
                         data: "1".as_bytes().to_vec(),
@@ -531,8 +528,8 @@ mod tests {
         };
         let zk = TestZK {};
 
-        let satellite = Satellite::from_with_config(satellite, &cfg).unwrap();
-        let pox = PoX::new(satellite, zk, &cfg).unwrap();
+        let remote = Remote::from_with_config(remote, &cfg).unwrap();
+        let pox = PoX::new(remote, zk, &cfg).unwrap();
         let r = pox.eval_pof();
         // debug!("{:#?}", r);
         let vr = r.verify();
@@ -547,7 +544,7 @@ mod tests {
         assert_eq!(r.value, BigInt::from(8));
         assert_eq!(
             r,
-            PoFSatelliteResult::decompress_deserialize(
+            PoFRemoteResult::decompress_deserialize(
                 &r.serialize_compress::<BrotliCompressor>(&CompressorConfig::default())
                     .unwrap(),
                 &CompressorConfig::default()
@@ -563,7 +560,7 @@ mod tests {
         const N: usize = 1000;
         const PSIZE: usize = 512;
         let cfg = PoxConfig::default();
-        let satellite = Satellite::<Decimal> {
+        let remote = Remote::<Decimal> {
             terminals: (0..N)
                 .collect::<Vec<usize>>()
                 .par_iter()
@@ -593,7 +590,7 @@ mod tests {
                 })
                 .collect(),
 
-            satellite_packets: Some(CompletePackets {
+            remote_packets: Some(CompletePackets {
                 data: vec![
                     Packet {
                         data: "1".as_bytes().to_vec(),
@@ -611,8 +608,8 @@ mod tests {
         };
         let zk = TestZK {};
 
-        let satellite = Satellite::from_with_config(satellite, &cfg).unwrap();
-        let pox = PoX::new(satellite, zk, &cfg).unwrap();
+        let remote = Remote::from_with_config(remote, &cfg).unwrap();
+        let pox = PoX::new(remote, zk, &cfg).unwrap();
         let r = pox.eval_pof();
         // debug!("{:#?}", r);
         let vr = r.verify();
@@ -622,7 +619,7 @@ mod tests {
         assert_eq!(vr[3], PoFVerify::Success);
         assert_eq!(
             r,
-            PoFSatelliteResult::decompress_deserialize(
+            PoFRemoteResult::decompress_deserialize(
                 &r.serialize_compress::<BrotliCompressor>(&CompressorConfig::default())
                     .unwrap(),
                 &CompressorConfig::default()

@@ -7,9 +7,9 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     pub mac: String,
     #[sea_orm(column_type = "Float")]
-    pub latitude: f32,
+    pub y: f32,
     #[sea_orm(column_type = "Float")]
-    pub longitude: f32,
+    pub x: f32,
     pub address: String,
     #[sea_orm(primary_key)]
     pub id: i32,

@@ -2,7 +2,7 @@
 
 pub use super::ip_packets::Entity as IpPackets;
 pub use super::p2p::Entity as P2p;
-pub use super::satellite::Entity as Satellite;
-pub use super::satellite_track::Entity as SatelliteTrack;
+pub use super::remote::Entity as Remote;
+pub use super::remote_track::Entity as RemoteTrack;
 pub use super::terminal::Entity as Terminal;
 pub use super::terminal_track::Entity as TerminalTrack;

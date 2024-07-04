@@ -7,17 +7,17 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Satellite<T: FixedPoint> {
+pub struct Remote<T: FixedPoint> {
     pub epoch: usize,
     pub address: String,
     pub position: Pos3D<T>,
     pub terminals: Vec<Terminal<T>>,
-    // if option == None, it means the satellite has not sent packets
-    pub satellite_packets: Option<CompletePackets>,
+    // if option == None, it means the remote has not sent packets
+    pub remote_packets: Option<CompletePackets>,
 }
 
-impl EndPointFrom<Satellite<Decimal>> for Satellite<BigInt> {
-    fn from_with_config(value: Satellite<Decimal>, cfg: &PoxConfig) -> Result<Self, Error> {
+impl EndPointFrom<Remote<Decimal>> for Remote<BigInt> {
+    fn from_with_config(value: Remote<Decimal>, cfg: &PoxConfig) -> Result<Self, Error> {
         Ok(Self {
             epoch: value.epoch,
             address: value.address,
@@ -32,7 +32,7 @@ impl EndPointFrom<Satellite<Decimal>> for Satellite<BigInt> {
                 .iter()
                 .map(|t| Terminal::<BigInt>::from_with_config(t.clone(), cfg))
                 .collect::<Result<Vec<_>, _>>()?,
-            satellite_packets: value.satellite_packets,
+            remote_packets: value.remote_packets,
         })
     }
 }

@@ -49,13 +49,13 @@ mod test_client {
             let start = 0;
             // define mock request
             let prover_address_mock = "0x123456";
-            let satellite_address_mock = "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838";
+            let remote_address_mock = "evmosvaloper1q9dvfsksdv88yz8yjzm6xy808888ylc8e2n838";
             let epoch_for_proof_mock = 1;
             let block_height_from_for_proof_mock = start;
             let block_height_to_for_proof_mock = start + 200000;
             let request = tonic::Request::new(ZkGenProofRequest {
                 prover_address: prover_address_mock.to_string(),
-                satellite_address: satellite_address_mock.to_string(),
+                remote_address: remote_address_mock.to_string(),
                 epoch_for_proof: epoch_for_proof_mock,
                 block_height_from_for_proof: block_height_from_for_proof_mock,
                 block_height_to_for_proof: block_height_to_for_proof_mock,
@@ -109,13 +109,13 @@ mod test_client {
             let start = 0;
             // define mock request
             let prover_address_mock = "0x123456";
-            let satellite_address_mock = "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch";
+            let remote_address_mock = "space1fdhkvj4zjgverz2fsy6cmehxx6gtxrwh0j7pch";
             let epoch_for_proof_mock = 1;
             let block_height_from_for_proof_mock = start;
             let block_height_to_for_proof_mock = start + 200000;
             let request = tonic::Request::new(ZkGenProofRequest {
                 prover_address: prover_address_mock.to_string(),
-                satellite_address: satellite_address_mock.to_string(),
+                remote_address: remote_address_mock.to_string(),
                 epoch_for_proof: epoch_for_proof_mock,
                 block_height_from_for_proof: block_height_from_for_proof_mock,
                 block_height_to_for_proof: block_height_to_for_proof_mock,
@@ -133,7 +133,7 @@ mod test_client {
             let resp_unwrapped = response.unwrap().into_inner();
             let request = tonic::Request::new(ZkVerifyProofRequest {
                 prover_address: prover_address_mock.to_string(),
-                satellite_address: satellite_address_mock.to_string(),
+                remote_address: remote_address_mock.to_string(),
                 epoch_for_proof: epoch_for_proof_mock,
                 block_height_from_for_proof: block_height_from_for_proof_mock,
                 block_height_to_for_proof: block_height_to_for_proof_mock,

@@ -13,7 +13,7 @@ use rust_decimal::Decimal;
 use tracing::{debug, warn};
 use types::{
     Alpha, Error, FixedPoint, FixedPointInteger, GetPos2D, MerkleAble, MerkleComparison,
-    MerkleProofStruct, Pos3D, Satellite,
+    MerkleProofStruct, Pos3D, Remote,
 };
 mod math;
 use math::*;
@@ -34,11 +34,11 @@ struct PoDCoef<T: FixedPoint> {
 pub struct PoDTerminalResult<T: FixedPoint> {
     pub terminal_address: String,
     pub weight: T,
-    value_for_satellite: T,
+    value_for_remote: T,
     proof: (Vec<u8>, Vec<u8>),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PoDSatelliteResult<T: FixedPoint> {
+pub struct PoDRemoteResult<T: FixedPoint> {
     pub score: T,
     pub terminal_results: Vec<PoDTerminalResult<T>>,
 }
@@ -50,18 +50,18 @@ pub struct PoFTerminalResult<T: FixedPoint> {
     pub invalid_packets_num: T,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PoFSatelliteResult<T: FixedPoint> {
+pub struct PoFRemoteResult<T: FixedPoint> {
     pub value: T,
     pub terminal_results: Vec<PoFTerminalResult<T>>,
 }
-impl SerdeBinTrait for PoDSatelliteResult<BigInt> {}
-impl SerdeBinTrait for PoFSatelliteResult<BigInt> {}
+impl SerdeBinTrait for PoDRemoteResult<BigInt> {}
+impl SerdeBinTrait for PoFRemoteResult<BigInt> {}
 #[derive(Debug, Clone)]
 pub struct PoX<P: Penalty<BaseType = BigInt>, ZK: zkt::ZkTraitHalo2<F = Fp>> {
     zk_prover: ZK,
     pub(crate) kernel: KernelKind<BigInt>,
     pub(crate) penalty: P,
-    satellite: Satellite<BigInt>,
+    remote: Remote<BigInt>,
     pod_max_value: BigInt,
     cfg: PoxConfig,
 }
@@ -86,32 +86,32 @@ impl PoDTerminalResult<BigInt> {
         PoDTerminalResult {
             terminal_address: address,
             weight: BigInt::zero(),
-            value_for_satellite: BigInt::zero(),
+            value_for_remote: BigInt::zero(),
             proof: (vec![], vec![]),
         }
     }
 }
-impl PoDSatelliteResult<BigInt> {
+impl PoDRemoteResult<BigInt> {
     pub fn new_from_results(
         results: Vec<PoDTerminalResult<BigInt>>,
         pod_max_value: BigInt,
     ) -> Self {
         let total_value = results
             .iter()
-            .map(|r| r.value_for_satellite.clone() * r.weight.clone())
+            .map(|r| r.value_for_remote.clone() * r.weight.clone())
             .sum::<BigInt>();
         let weight: BigInt = results.iter().map(|r| r.weight.clone()).sum();
         if weight.is_zero() {
             warn!("PoD: Total weight is zero, set value to zero");
-            return PoDSatelliteResult {
+            return PoDRemoteResult {
                 score: BigInt::zero(),
                 terminal_results: results,
             };
         }
         let value = Ratio::new(total_value.clone(), weight.clone()).to_integer();
         let score = (value.clone() - pod_max_value.clone()).max(BigInt::zero());
-        debug!(message = "PoD Result", ?total_value, ?weight,satellite_value=?value.clone(),satellite_score=?score.clone());
-        PoDSatelliteResult {
+        debug!(message = "PoD Result", ?total_value, ?weight,remote_value=?value.clone(),remote_score=?score.clone());
+        PoDRemoteResult {
             score,
             terminal_results: results,
         }
@@ -145,19 +145,19 @@ impl PoFTerminalResult<BigInt> {
         }
     }
 }
-impl PoFSatelliteResult<BigInt> {
+impl PoFRemoteResult<BigInt> {
     pub fn new_from_results(results: Vec<PoFTerminalResult<BigInt>>) -> Self {
         let total_value: BigInt = results.iter().map(|r| r.valid_packets_num.clone()).sum();
         debug!(message = "PoF Result", ?total_value);
         // if results.len() == 0 {
         //     warn!("PoF: No terminal results, set value to zero");
-        //     return PoFSatelliteResult {
+        //     return PoFRemoteResult {
         //         value: BigInt::zero(),
         //         terminal_results: results,
         //     };
         // }
         // let value = total_value / results.len();
-        PoFSatelliteResult {
+        PoFRemoteResult {
             value: total_value,
             terminal_results: results,
         }
@@ -235,9 +235,9 @@ impl<ZK> PoX<LinearPenalty<BigInt>, ZK>
 where
     ZK: zkt::ZkTraitHalo2<F = Fp>,
 {
-    pub fn new(satellite: Satellite<BigInt>, zkp: ZK, cfg: &PoxConfig) -> Result<Self, Error> {
+    pub fn new(remote: Remote<BigInt>, zkp: ZK, cfg: &PoxConfig) -> Result<Self, Error> {
         let _span = tracing::debug_span!("PoX::new").entered();
-        let mut terminals = satellite.terminals.clone();
+        let mut terminals = remote.terminals.clone();
 
         let mut counts = HashMap::new();
         for t in &terminals {
@@ -247,20 +247,20 @@ where
         terminals.retain(|t| counts[&t.address] == 1);
         debug!(
             message = format!(
-                "remove duplicate terminals for Satellite {}",
-                address_brief(&satellite.address)
+                "remove duplicate terminals for Remote {}",
+                address_brief(&remote.address)
             ),
             before = counts.len(),
             after = terminals.len()
         );
         // TODO: address may have lower case or upper case problem
         terminals.sort_by(|a, b| a.address.cmp(&b.address));
-        let satellite = Satellite {
-            address: satellite.address.clone(),
+        let remote = Remote {
+            address: remote.address.clone(),
             terminals,
-            position: satellite.position.clone(),
-            satellite_packets: satellite.satellite_packets.clone(),
-            epoch: satellite.epoch.clone(),
+            position: remote.position.clone(),
+            remote_packets: remote.remote_packets.clone(),
+            epoch: remote.epoch.clone(),
         };
         let pox = Self {
             kernel: match cfg.kernel.kernel_type {
@@ -271,7 +271,7 @@ where
                     KernelKind::Quadratic(Quadratic::<BigInt>::from_pox_cfg(&cfg)?)
                 }
             },
-            satellite,
+            remote,
             zk_prover: zkp,
             penalty: LinearPenalty {
                 max_diff: BigInt::fixed_from_decimal(
@@ -288,7 +288,7 @@ where
         debug!(meesage="PoX",kernel=?pox.kernel,penalty=?pox.penalty,pod_max_value=?pox.pod_max_value);
         Ok(pox)
     }
-    pub fn eval_pod(&self) -> PoDSatelliteResult<BigInt> {
+    pub fn eval_pod(&self) -> PoDRemoteResult<BigInt> {
         let _span = tracing::debug_span!("eval_pod").entered();
         let mut coef_hist = SyncHistogram::<u64>::from(Histogram::new(3).unwrap());
         let mut rspr_hist = SyncHistogram::<u64>::from(Histogram::new(3).unwrap());
@@ -323,7 +323,7 @@ where
         let calc_coefx_start = Instant::now();
         let mut nearby_len_hist = Histogram::<u64>::new(3).unwrap();
         let coefx = self
-            .satellite
+            .remote
             .terminals
             .par_iter()
             .enumerate()
@@ -345,7 +345,7 @@ where
                 let mut x_hist = x_hist.recorder();
                 let mut y_hist = y_hist.recorder();
                 (
-                    self.satellite
+                    self.remote
                         .terminals
                         .iter()
                         .filter_map(|t2| {
@@ -409,7 +409,7 @@ where
             p75 = nearby_len_hist.value_at_quantile(0.75),
         );
         let pos = self
-            .satellite
+            .remote
             .position
             .to_decimal(self.cfg.coordinate_precision_bigint)
             .map_or_else(
@@ -424,7 +424,7 @@ where
                 |f| f,
             );
         debug!(
-            message = "satellite position",
+            message = "remote position",
             x = pos.x.to_string(),
             y = pos.y.to_string(),
             z = pos.height.to_string(),
@@ -558,7 +558,7 @@ where
                         .map_err(|e| Error::ZeroKnownledgeProofErr(e.to_string()))?;
                     Ok(PoDTerminalResult {
                         weight,
-                        value_for_satellite: value.to_integer(),
+                        value_for_remote: value.to_integer(),
                         proof: zkr,
                         // proof: vec![],
                         terminal_address: address.clone(),
@@ -571,7 +571,7 @@ where
             })
             .collect::<Vec<_>>();
 
-        assert!(pod_result.len() == self.satellite.terminals.len());
+        assert!(pod_result.len() == self.remote.terminals.len());
         rspr_eval_hist.refresh();
         diff_mag_hist.refresh();
         weight_mag_hist.refresh();
@@ -605,17 +605,17 @@ where
             p50 = weight_mag_hist.value_at_quantile(0.5) as f64,
             p75 = weight_mag_hist.value_at_quantile(0.75) as f64,
         );
-        PoDSatelliteResult::new_from_results(pod_result, self.pod_max_value.clone())
+        PoDRemoteResult::new_from_results(pod_result, self.pod_max_value.clone())
     }
-    pub fn eval_pof(&self) -> PoFSatelliteResult<BigInt> {
+    pub fn eval_pof(&self) -> PoFRemoteResult<BigInt> {
         let _span = tracing::debug_span!("eval_pof").entered();
-        let result = if let Some(satellite_packets) = self.satellite.satellite_packets.as_ref() {
-            let ref_merkle = satellite_packets.merkle_tree();
+        let result = if let Some(remote_packets) = self.remote.remote_packets.as_ref() {
+            let ref_merkle = remote_packets.merkle_tree();
             let ref_merkle = match ref_merkle {
                 Ok(m) => m,
                 Err(e) => {
                     warn!("PoF: Reference Merkle tree error: {}", e.to_string());
-                    return PoFSatelliteResult {
+                    return PoFRemoteResult {
                         value: BigInt::zero(),
                         terminal_results: Vec::new(),
                     };
@@ -632,7 +632,7 @@ where
             let dropped_packet_len_hist = SyncHistogram::from(Histogram::<u64>::new(3).unwrap());
             let dropped_rate_hist = SyncHistogram::from(Histogram::<u64>::new(3).unwrap());
             let result = self
-                .satellite
+                .remote
                 .terminals
                 .par_iter()
                 .map(|t| {
@@ -655,7 +655,7 @@ where
                                 e
                             });
                         let dropped_rate: u64 = (proof.indices_to_prove.len() as f64
-                            / satellite_packets.data.len() as f64
+                            / remote_packets.data.len() as f64
                             * 10000_f64) as u64;
                         let _ = dropped_rate_hist
                             .recorder()
@@ -718,11 +718,11 @@ where
                 p50 = (dropped_rate_hist.value_at_quantile(0.5) as f64 / 100.0).to_string() + "%",
                 p75 = (dropped_rate_hist.value_at_quantile(0.75) as f64 / 100.0).to_string() + "%",
             );
-            assert!(result.len() == self.satellite.terminals.len());
+            assert!(result.len() == self.remote.terminals.len());
             result
         } else {
             Vec::new()
         };
-        PoFSatelliteResult::new_from_results(result)
+        PoFRemoteResult::new_from_results(result)
     }
 }

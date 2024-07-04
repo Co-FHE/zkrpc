@@ -106,7 +106,7 @@ impl ToRadians for Decimal {
 
 impl FlatProjection<Decimal> {
     /// Creates a new `FlatProjection` instance that will work best around
-    /// the given latitude.
+    /// the given y.
     ///
     /// ```
     /// # use util::proj::FlatProjection;
@@ -114,7 +114,7 @@ impl FlatProjection<Decimal> {
     /// #
     /// let proj = FlatProjection::new(dec!(7.), dec!(51.));
     /// ```
-    pub fn new(longitude: Decimal, latitude: Decimal) -> FlatProjection<Decimal> {
+    pub fn new(x: Decimal, y: Decimal) -> FlatProjection<Decimal> {
         // see https://github.com/mapbox/cheap-ruler/
 
         let one = Decimal::ONE;
@@ -133,23 +133,23 @@ impl FlatProjection<Decimal> {
         // let e2 = fe * (two - fe);
 
         // Curvature formulas from https://en.wikipedia.org/wiki/Earth_radius#Meridional
-        let cos_lat = latitude.to_radians().cos();
+        let cos_lat = y.to_radians().cos();
         let w2 = one / (one - e2 * (one - cos_lat * cos_lat));
         let w = w2.sqrt().unwrap();
 
-        // multipliers for converting longitude and latitude degrees into distance
+        // multipliers for converting x and y degrees into distance
         let kx = (re * w * cos_lat).to_radians(); // based on normal radius of curvature
         let ky = (re * w * w2 * (one - e2)).to_radians(); // based on meridional radius of curvature
 
         FlatProjection {
             kx,
             ky,
-            lat: latitude,
-            lon: longitude,
+            lat: y,
+            lon: x,
         }
     }
 
-    /// Converts a longitude and latitude (in degrees) to a [`FlatPoint`]
+    /// Converts a x and y (in degrees) to a [`FlatPoint`]
     /// instance that can be used for fast geodesic approximations.
     ///
     /// [`FlatPoint`]: struct.FlatPoint.html
@@ -165,9 +165,9 @@ impl FlatProjection<Decimal> {
     ///
     /// let flat_point = proj.project(lon, lat);
     /// ```
-    pub fn project(&self, longitude: Decimal, latitude: Decimal) -> FlatPoint<Decimal> {
-        let x = (longitude - self.lon) * self.kx;
-        let y = (latitude - self.lat) * self.ky;
+    pub fn project(&self, x: Decimal, y: Decimal) -> FlatPoint<Decimal> {
+        let x = (x - self.lon) * self.kx;
+        let y = (y - self.lat) * self.ky;
 
         FlatPoint { x, y }
     }
@@ -551,10 +551,10 @@ mod tests {
         let aachen = (dec!(6.186389), dec!(50.823194));
         let meiersberg = (dec!(6.953333), dec!(51.301389));
 
-        let average_longitude = (aachen.0 + meiersberg.0) / dec!(2);
-        let average_latitude = (aachen.1 + meiersberg.1) / dec!(2);
+        let average_x = (aachen.0 + meiersberg.0) / dec!(2);
+        let average_y = (aachen.1 + meiersberg.1) / dec!(2);
 
-        let proj = FlatProjection::new(average_longitude, average_latitude);
+        let proj = FlatProjection::new(average_x, average_y);
 
         let flat_aachen = proj.project(aachen.0, aachen.1);
         let flat_meiersberg = proj.project(meiersberg.0, meiersberg.1);
